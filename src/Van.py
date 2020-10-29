@@ -6,7 +6,7 @@ class Van:
         self._orders = list()
 
     def __str__(self):
-        return str(self._capacity)
+        return str('Capacity ' + str(self._capacity))
 
     @property
     def capacity(self):
@@ -15,6 +15,10 @@ class Van:
     @property
     def orders(self):
         return self._orders
+
+    @orders.setter
+    def orders(self, order):
+        self._orders.append(order)
 
 
 if __name__ == '__main__':
