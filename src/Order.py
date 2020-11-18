@@ -1,16 +1,23 @@
 import time
+import random
 
 
 class Order:
 
-    def __init__(self, id, user, address, placed_time, scheduled_time, size):
+    def __init__(self, id, user, coords, placed_time, scheduled_time, size):
 
         self._id = id
         self._user = user
-        self._address = address
+        self._coords = coords
+        self._distance = random.randrange(30)
         self._placed_time = time.time()
         self._scheduled_time = scheduled_time
+        self._time_to_delivery = random.randrange(30)
         self._size = size
+
+    def __str__(self):
+
+        return str(self.id)
 
     @property
     def id(self):
@@ -21,8 +28,8 @@ class Order:
         return self._user
 
     @property
-    def get_address(self):
-        return self._address
+    def coords(self):
+        return self._coords
 
     @property
     def placed_time(self):
@@ -35,3 +42,14 @@ class Order:
     @property
     def size(self):
         return self._size
+
+    @property
+    def distance(self):
+        return self._distance
+
+    @property
+    def time_to_delivery(self):
+        return self._time_to_delivery
+
+
+
