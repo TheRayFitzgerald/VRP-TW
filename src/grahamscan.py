@@ -24,17 +24,17 @@ def GrahamScan(orders):
 	#P.sort()			# Sort the set of points
     P = sorted(id_coords, key=itemgetter(1))
 
-    L_upper = [P[0][1], P[1][1]]
+    L_upper = [P[0], P[1]]
 
     for i in range(2,len(P)):
-        L_upper.append(P[i][1])
-        while len(L_upper) > 2 and not RightTurn(L_upper[-1],L_upper[-2],L_upper[-3]):
+        L_upper.append(P[i])
+        while len(L_upper) > 2 and not RightTurn(L_upper[-1][1],L_upper[-2][1],L_upper[-3][1]):
             del L_upper[-2]
-    L_lower = [P[-1][1], P[-2][1]]	# Initialize the lower part
+    L_lower = [P[-1], P[-2]]	# Initialize the lower part
     # Compute the lower part of the hull
     for i in range(len(P)-3,-1,-1):
-        L_lower.append(P[i][1])
-        while len(L_lower) > 2 and not RightTurn(L_lower[-1],L_lower[-2],L_lower[-3]):
+        L_lower.append(P[i])
+        while len(L_lower) > 2 and not RightTurn(L_lower[-1][1],L_lower[-2][1],L_lower[-3][1]):
             del L_lower[-2]
     del L_lower[0]
     del L_lower[-1]
