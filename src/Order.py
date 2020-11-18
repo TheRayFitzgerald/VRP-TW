@@ -1,5 +1,8 @@
 import time
 import random
+from math import sqrt
+
+DEPOT_COORDS = (100, 100)
 
 
 class Order:
@@ -9,7 +12,7 @@ class Order:
         self._id = id
         self._user = user
         self._coords = coords
-        self._distance = random.randrange(30)
+        self._distance = sqrt((DEPOT_COORDS[0] - self._coords[0])**2 + (DEPOT_COORDS[1] - self._coords[1])**2)
         self._placed_time = time.time()
         self._scheduled_time = scheduled_time
         self._time_to_delivery = random.randrange(30)

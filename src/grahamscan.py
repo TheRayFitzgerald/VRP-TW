@@ -15,14 +15,12 @@ def RightTurn(p1, p2, p3):
 
 # Main algorithm:
 def GrahamScan(orders):
-    id_coords = list()
+    obj_coords = list()
     for order in orders:
-       id_coords.append([order.id, order.coords])
-    id_coords = list()
-    for order in orders:
-        id_coords.append([order.id, order.coords])
+       obj_coords.append([order, order.coords])
+
 	#P.sort()			# Sort the set of points
-    P = sorted(id_coords, key=itemgetter(1))
+    P = sorted(obj_coords, key=itemgetter(1))
 
     L_upper = [P[0], P[1]]
 

@@ -4,6 +4,7 @@ from Order import Order
 from random import random, randrange
 from operator import itemgetter
 from grahamscan import GrahamScan
+from math import sqrt
 import numpy as np
 
 all_couriers = list()
@@ -23,8 +24,9 @@ def main():
     print(order1)
     '''
     #create a list of orders
-    orders = create_orders(10)
-
+    orders = create_orders(50)
+    greedy_construction(orders)
+    '''
     print('\nUnsorted orders: ')
     for order in orders:
         print(order)
@@ -33,10 +35,8 @@ def main():
     orders_gch = greedy_construction(orders)
     for order in orders_gch:
         print(order[0])
+    '''
 
-
-    L = GrahamScan(orders)
-    print(L)
 
 
 def create_orders(quantity):
@@ -47,15 +47,25 @@ def create_orders(quantity):
 
     return orders
 
-def greedy_construction(orders):
-
+def sort_L_comp(L_comp):
     unsorted_list = list()
 
-    # create sorted list
-    for order in orders:
-        unsorted_list.append([order, order.distance + order.time_to_delivery])
 
-    return sorted(unsorted_list, key=itemgetter(1))
+
+def greedy_construction(orders):
+
+    L = GrahamScan(orders)
+    temp2 = list()
+    for order in L:
+        temp2.append(order[0])
+    L_comp = list(set(orders) - set(temp2))
+    L_comp.sort(key=lambda x: x.distance, reverse=True)
+
+    #L_comp = sort_L_comp(L_comp)
+    print(len(L_comp))
+
+    print(len(L))
+
 
 def calculate_time_ratingt(time_val):
     current_time = (9, 0)
