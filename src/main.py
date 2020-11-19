@@ -14,6 +14,7 @@ all_orders = list()
 all_users = list()
 all_vans = list()
 
+DEPOT_COORDS = (100, 100)
 
 def main():
     #create a new van and courier
@@ -67,16 +68,15 @@ def get_distance_between_vertices(vertex1, vertex2):
 
     return sqrt((vertex1[0] - vertex2[0])**2 + (vertex1[1] - vertex2[1])**2)
 
-def greedy_construction(orders):
+def route_initialization(L, L_comp):
 
-    L_points, L = GrahamScan(orders)
-    L_comp = list(set(orders) - set(L))
-    #plot_convex_hull(orders, L_points)
+    # sort by shortest distance from depot
+    L_comp.sort(key=lambda x: x.distance, reverse=True)
 
     S = list()
     S.append(max(L, key=attrgetter('distance')))
 
-    while len(S) < 4:
+    while len(S) < 6:
 
         # find order that maximises sum of distances from existing seeds in S
         j = (None, 0)
@@ -89,24 +89,47 @@ def greedy_construction(orders):
                 j = (order, accum_distance)
         j = j[0]
         print(j.distance)
-        min_distance = None
+
+        # get min distance between j and seeds
+        min_distance_to_j = None
         for seed in S:
-            if min_distance == None:
-                min_distance = get_distance_between_vertices(seed.coords, j.coords)
-            if get_distance_between_vertices(seed.coords, j.coords) < min_distance:
-                min_distance = get_distance_between_vertices(seed.coords, j.coords)
+            if min_distance_to_j == None:
+                min_distance_to_j = get_distance_between_vertices(seed.coords, j.coords)
+            if get_distance_between_vertices(seed.coords, j.coords) < min_distance_to_j:
+                min_distance_to_j = get_distance_between_vertices(seed.coords, j.coords)
 
-        print('min %f' % min_distance)
-    # print(S[0].distance
+        # get i, first item of L_comp
+
+        i = L_comp[0]
+
+        # get min distance between i and seeds
+        min_distance_to_i = None
+        for seed in S:
+            if min_distance_to_i == None:
+                min_distance_to_i = get_distance_between_vertices(seed.coords, i.coords)
+            if get_distance_between_vertices(seed.coords, i.coords) < min_distance_to_i:
+                min_distance_to_i = get_distance_between_vertices(seed.coords, i.coords)
+
+        print('min %f' % min_distance_to_i)
 
 
+        if min_distance_to_i < min_distance_to_j:
+            L.remove(j)
+            S.append(j)
+        elif min_distance_to_i > min_distance_to_j:
+            L_comp.remove(i)
+            S.append(i)
+    return S
 
 
+def greedy_construction(orders):
 
-    #L_comp.sort(key=lambda x: x.distance, reverse=True)
-    #print(get_furthest_vertex(L_comp))
+    L_points, L = GrahamScan(orders)
+    L_comp = list(set(orders) - set(L))
+    # plot_convex_hull(orders, L_points)
+    S = route_initialization(L, L_comp)
 
-
+    plot_convex_hull(S, L_points)
 
 
 
@@ -118,7 +141,11 @@ def plot_convex_hull(orders, L):
         P.append(order.coords)
     P = np.array(P)
 
+
     plt.figure()
+    #plt.plot(cplr)
+    #plt.plot(DEPOT_COORDS[:,0],DEPOT_COORDS[:,1], 'b-', picker=5)
+    plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], 'ro')
     plt.plot(L[:,0],L[:,1], 'b-', picker=5)
     plt.plot([L[-1,0],L[0,0]],[L[-1,1],L[0,1]], 'b-', picker=5)
     plt.plot(P[:,0],P[:,1],".r")
