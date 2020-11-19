@@ -37,7 +37,13 @@ def GrahamScan(orders):
     del L_lower[0]
     del L_lower[-1]
     L = L_upper + L_lower		# Build the full hull
-    return np.array(L)
+    return_L = list()
+    return_orders = list()
+    for item in L:
+        return_L.append(item[1])
+        return_orders.append(item[0])
+
+    return (np.array(return_L), return_orders)
 
 def main():
 	try:
@@ -52,9 +58,9 @@ def main():
 
 	# Plot the computed Convex Hull:
 	plt.figure()
-	plt.plot(L[:,0],L[:,1], 'b-', picker=5)
-	plt.plot([L[-1,0],L[0,0]],[L[-1,1],L[0,1]], 'b-', picker=5)
-	plt.plot(P[:,0],P[:,1],".r")
+	plt.plot(L[:,0][1],L[:,1][1], 'b-', picker=5)
+	plt.plot([L[-1,0][1],L[0,0][1]],[L[-1,1][1],L[0,1][1]], 'b-', picker=5)
+	plt.plot(P[:,0][1],P[:,1][1],".r")
 	plt.axis('off')
 	plt.show()
 
