@@ -76,6 +76,9 @@ def route_initialization(L, L_comp):
     S = list()
     S.append(max(L, key=attrgetter('distance')))
 
+    # check this line with KB
+    L.remove(max(L, key=attrgetter('distance')))
+
     while len(S) < 6:
 
         # find order that maximises sum of distances from existing seeds in S
@@ -84,7 +87,6 @@ def route_initialization(L, L_comp):
             accum_distance = 0
             for seed in S:
                 accum_distance += get_distance_between_vertices(seed.coords, order.coords)
-
             if accum_distance > j[1]:
                 j = (order, accum_distance)
         j = j[0]
@@ -100,7 +102,14 @@ def route_initialization(L, L_comp):
 
         # get i, first item of L_comp
 
-        i = L_comp[0]
+        i = (None, 0)
+        for order in L_comp:
+            accum_distance = 0
+            for seed in S:
+                accum_distance += get_distance_between_vertices(seed.coords, order.coords)
+            if accum_distance > i[1]:
+                i = (order, accum_distance)
+        i = i[0]
 
         # get min distance between i and seeds
         min_distance_to_i = None
@@ -114,27 +123,28 @@ def route_initialization(L, L_comp):
 
 
         if min_distance_to_i < min_distance_to_j:
-            L.remove(j)
-            S.append(j)
+            print('j')
+            S.append(L.pop(L.index(j)))
         elif min_distance_to_i > min_distance_to_j:
-            L_comp.remove(i)
-            S.append(i)
-    return S
+            print('i')
+            S.append(L_comp.pop(L_comp.index(i)))
+    return [S, L, L_comp]
+
+#def main_routing(unassigned_orders, 6):
+
 
 
 def greedy_construction(orders):
 
     L_points, L = GrahamScan(orders)
     L_comp = list(set(orders) - set(L))
-    # plot_convex_hull(orders, L_points)
-    S = route_initialization(L, L_comp)
+    plot_convex_hull(orders, L_points, '.r')
+    S, L, L_comp = route_initialization(L, L_comp)
 
-    plot_convex_hull(S, L_points)
-
-
+    plot_convex_hull(S, L_points, 'bo')
 
 
-def plot_convex_hull(orders, L):
+def plot_convex_hull(orders, L, colour):
 
     P = list()
     for order in orders:
@@ -145,10 +155,10 @@ def plot_convex_hull(orders, L):
     plt.figure()
     #plt.plot(cplr)
     #plt.plot(DEPOT_COORDS[:,0],DEPOT_COORDS[:,1], 'b-', picker=5)
-    plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], 'ro')
+    plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], '*g')
     plt.plot(L[:,0],L[:,1], 'b-', picker=5)
     plt.plot([L[-1,0],L[0,0]],[L[-1,1],L[0,1]], 'b-', picker=5)
-    plt.plot(P[:,0],P[:,1],".r")
+    plt.plot(P[:,0],P[:,1], colour)
     plt.axis('off')
     plt.show()
 
