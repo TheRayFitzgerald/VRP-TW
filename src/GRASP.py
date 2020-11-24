@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import random, operator
 import numpy as np
 
+DEPOT_COORDS = (100, 100)
 
 def sort_L_comp(L_comp):
     unsorted_list = list()
@@ -39,7 +40,7 @@ def route_initialization(L, L_comp):
     # check this line with KB
     L.remove(max(L, key=attrgetter('distance')))
 
-    while len(S) < 6:
+    while len(S) < 10:
 
         # find order that maximises sum of distances from existing seeds in S
         j = (None, 0)
@@ -62,11 +63,14 @@ def route_initialization(L, L_comp):
 
         # get i, first item of L_comp
 
-        i = (None, 0)
+        i = None
+
         for order in L_comp:
             accum_distance = 0
             for seed in S:
                 accum_distance += get_distance_between_vertices(seed.coords, order.coords)
+            if i == None:
+                i = (order, accum_distance)
             if accum_distance > i[1]:
                 i = (order, accum_distance)
         i = i[0]
@@ -133,9 +137,11 @@ def main_routing(unscheduled_orders, S, routes):
 
         added_order_rcp = random.choice(largest_penalty_orders)
         added_order = routes.add_vertex(added_order_rcp[0])
-        routes.add_edge(added_order,added_order_rcp[1][0], added_order_rcp[1][1])
+        routes.add_edge(added_order, routes.get_vertex(added_order_rcp[1][0]), int(round(added_order_rcp[1][1], 0)))
 
+        print(len(unscheduled_orders))
         unscheduled_orders.remove(added_order_rcp[0])
+        print(len(unscheduled_orders))
 
     return routes
 
@@ -150,13 +156,41 @@ def grasp(orders):
     #plot_convex_hull(S, L_points, 'bo')
 
     routes = main_routing(unscheduled_orders, S, routes)
+    #print(routes)
+    #plot_convex_hull(routes.vertices(), L_points, 'bo')
+    print(routes)
+    print(routes.num_edges())
+    plt.figure()
+    P = list()
+    for order in orders:
+        P.append(order.coords)
+    plt.scatter(*zip(*P))
+    P = np.array(P)
 
+
+
+    # plt.plot(P[:,0],P[:,1], 'b-', picker=5)
+    #plt.plot([P[-1,0],P[0,0]],[P[-1,1],P[0,1]], 'b-', picker=5)
+    #plt.plot(P[:,0],P[:,1], 'b')
+    plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], '*g')
+    for edge in routes.edges():
+        vertices = edge.vertices()
+
+        x_values = [vertices[0].element().coords[0], vertices[1].element().coords[0]]
+        y_values = [vertices[0].element().coords[1], vertices[1].element().coords[1]]
+        plt.plot(x_values, y_values)
+
+
+        #print(vertices[0].element().id)
+        #plt.plot(vertices[0].element().coords, vertices[1].element().coords)
+    #plt.axis('off')
+    plt.show()
 
 def plot_convex_hull(orders, L, colour):
 
     P = list()
     for order in orders:
-        P.append(order.coords)
+        P.append(order.element().coords)
     P = np.array(P)
 
 

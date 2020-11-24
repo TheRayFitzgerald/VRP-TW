@@ -137,6 +137,12 @@ class Graph:
         """ Return a list of all vertices in the graph. """
         return [key for key in self._structure]
 
+    def get_vertex(self, element):
+
+        for vertex in self.vertices():
+            if vertex.element() == element:
+                return vertex
+
     def get_vertex_by_label(self, element):
         """ Return the first vertex that matches element. """
         for v in self._structure:

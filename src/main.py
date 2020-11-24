@@ -15,7 +15,7 @@ all_orders = list()
 all_users = list()
 all_vans = list()
 
-DEPOT_COORDS = (100, 100)
+
 
 def main():
     #create a new van and courier
