@@ -2,8 +2,7 @@ import time
 import random
 from math import sqrt
 
-DEPOT_COORDS = (100, 100)
-
+DEPOT_COORDS = (150, 150)
 
 class Order:
 

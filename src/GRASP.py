@@ -7,10 +7,11 @@ from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
 from Graph import Graph, Vertex
 import matplotlib.pyplot as plt
-import random, operator
+import random, operator, time
 import numpy as np
+from collections import Counter
 
-DEPOT_COORDS = (100, 100)
+DEPOT_COORDS = (150, 150)
 
 def sort_L_comp(L_comp):
     unsorted_list = list()
@@ -24,6 +25,20 @@ def get_furthest_vertex(orders):
             max = order
 
     return max
+
+def get_nearest_vertex(origin_vertex, vertices):
+
+    min = vertices[0]
+
+    for vertex in vertices:
+        try:
+            if get_distance_between_vertices(origin_vertex.element().coords, vertex.element().coords) < get_distance_between_vertices(origin_vertex.element().coords, min.element().coords):
+                min = vertex
+        except:
+            pass
+
+
+    return min
 
 def get_distance_between_vertices(vertex1, vertex2):
 
@@ -40,7 +55,7 @@ def route_initialization(L, L_comp):
     # check this line with KB
     L.remove(max(L, key=attrgetter('distance')))
 
-    while len(S) < 10:
+    while len(S) < 3:
 
         # find order that maximises sum of distances from existing seeds in S
         j = (None, 0)
@@ -51,7 +66,6 @@ def route_initialization(L, L_comp):
             if accum_distance > j[1]:
                 j = (order, accum_distance)
         j = j[0]
-        print(j.distance)
 
         # get min distance between j and seeds
         min_distance_to_j = None
@@ -83,19 +97,17 @@ def route_initialization(L, L_comp):
             if get_distance_between_vertices(seed.coords, i.coords) < min_distance_to_i:
                 min_distance_to_i = get_distance_between_vertices(seed.coords, i.coords)
 
-        print('min %f' % min_distance_to_i)
-
-
         if min_distance_to_i < min_distance_to_j:
-            print('j')
             S.append(L.pop(L.index(j)))
         elif min_distance_to_i > min_distance_to_j:
-            print('i')
             S.append(L_comp.pop(L_comp.index(i)))
 
-    routes = Graph()
-    for order in S:
-        routes.add_vertex(order)
+    routes = dict()
+    for seed in S:
+        routes[seed] = Graph()
+        routes[seed].add_vertex(Order(0, 'ray', DEPOT_COORDS, '00:00', '00:00', 0))
+        routes[seed].add_vertex(seed)
+
 
     return [S, L, L_comp, routes]
 
@@ -126,7 +138,6 @@ def main_routing(unscheduled_orders, S, routes):
             # best route found. now caculate the penalty
             route_cost_penalty[2] = calculate_penalty(order, route_cost_penalty[1], other_routes)
             order_rcps.append([order, route_cost_penalty])
-            #print(route_cost_penalty[0].id)
 
             #construct fractional sublist of
 
@@ -136,12 +147,36 @@ def main_routing(unscheduled_orders, S, routes):
             largest_penalty_orders = sorted(order_rcps, key=lambda x: x[1][2], reverse=True)
 
         added_order_rcp = random.choice(largest_penalty_orders)
-        added_order = routes.add_vertex(added_order_rcp[0])
-        routes.add_edge(added_order, routes.get_vertex(added_order_rcp[1][0]), int(round(added_order_rcp[1][1], 0)))
+        added_order = routes[added_order_rcp[1][0]].add_vertex(added_order_rcp[0])
+        #routes[added_order_rcp[1][0]].add_edge(added_order, routes[added_order_rcp[1][0]].get_vertex(added_order_rcp[1][0]), int(round(added_order_rcp[1][1], 0)))
 
-        print(len(unscheduled_orders))
+
         unscheduled_orders.remove(added_order_rcp[0])
-        print(len(unscheduled_orders))
+
+    # routes now filled with vertices
+    # construct the best edges
+
+    for route in routes.values():
+
+        remaining_vertices = route.vertices()[1:].copy()
+        depot = route.vertices()[0]
+        nearest_vertex = get_nearest_vertex(depot, remaining_vertices)
+        route.add_edge(depot, nearest_vertex, get_distance_between_vertices(depot.element().coords, nearest_vertex.element().coords))
+
+        while(len(remaining_vertices) > 1):
+
+            for vertex in remaining_vertices:
+
+                if len(route.get_edges(vertex)) == 1:
+                    remaining_vertices.remove(vertex)
+                    nearest_vertex = get_nearest_vertex(vertex, remaining_vertices)
+                    edge = route.add_edge(vertex, nearest_vertex, get_distance_between_vertices(vertex.element().coords, nearest_vertex.element().coords))
+                    break
+
+            if len(remaining_vertices) == 0:
+                break
+
+        route.add_edge(remaining_vertices[0], route.vertices()[0], get_distance_between_vertices(remaining_vertices[0].element().coords, route.vertices()[0].element().coords))
 
     return routes
 
@@ -156,10 +191,11 @@ def grasp(orders):
     #plot_convex_hull(S, L_points, 'bo')
 
     routes = main_routing(unscheduled_orders, S, routes)
+
+
     #print(routes)
     #plot_convex_hull(routes.vertices(), L_points, 'bo')
-    print(routes)
-    print(routes.num_edges())
+    #print(routes.values().num_edges())
     plt.figure()
     P = list()
     for order in orders:
@@ -173,12 +209,16 @@ def grasp(orders):
     #plt.plot([P[-1,0],P[0,0]],[P[-1,1],P[0,1]], 'b-', picker=5)
     #plt.plot(P[:,0],P[:,1], 'b')
     plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], '*g')
-    for edge in routes.edges():
-        vertices = edge.vertices()
-
-        x_values = [vertices[0].element().coords[0], vertices[1].element().coords[0]]
-        y_values = [vertices[0].element().coords[1], vertices[1].element().coords[1]]
-        plt.plot(x_values, y_values)
+    for route in routes.values():
+        for edge in route.edges():
+            vertices = edge.vertices()
+            try:
+                x_values = [vertices[0].element().coords[0], vertices[1].element().coords[0]]
+                y_values = [vertices[0].element().coords[1], vertices[1].element().coords[1]]
+            except AttributeError:
+                x_values = [vertices[0].element().coords[0], vertices[1].element()[0]]
+                y_values = [vertices[0].element().coords[1], vertices[1].element()[1]]
+            plt.plot(x_values, y_values)
 
 
         #print(vertices[0].element().id)

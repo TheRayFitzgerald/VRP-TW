@@ -46,7 +46,7 @@ def main():
 
 def create_orders(quantity):
     orders = list()
-    for i in range (0, quantity):
+    for i in range (1, quantity):
         coords = (np.random.randint(0,300),np.random.randint(0,300))
         orders.append(Order(i, 'ray', coords, '13:05', '14:30', randrange(30)))
 
