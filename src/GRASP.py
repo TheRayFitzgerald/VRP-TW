@@ -102,11 +102,15 @@ def route_initialization(L, L_comp):
         elif min_distance_to_i > min_distance_to_j:
             S.append(L_comp.pop(L_comp.index(i)))
 
-    routes = dict()
+    routes = list()
+    i = 0
     for seed in S:
-        routes[seed] = Graph()
-        routes[seed].add_vertex(Order(0, 'ray', DEPOT_COORDS, '00:00', '00:00', 0))
-        routes[seed].add_vertex(seed)
+        g = Graph(i)
+        g.add_vertex(Order(0, 'ray', DEPOT_COORDS, '00:00', '00:00', 0))
+        g.add_vertex(seed)
+        routes.append(g)
+        #routes[len(routes) - 1].add_vertex(Order(0, 'ray', DEPOT_COORDS, '00:00', '00:00', 0))
+        i += 1
 
 
     return [S, L, L_comp, routes]
@@ -122,40 +126,68 @@ def calculate_penalty(order, min_cost, other_routes):
 def main_routing(unscheduled_orders, S, routes):
 
     # find the min insertion cost and the best route
+
+
     while(len(unscheduled_orders) > 0):
+        print(len(routes))
+        #print(len(unscheduled_orders))
         order_rcps = list()
         for order in unscheduled_orders:
             route_cost_penalty = None
+            min_cost_for_routes = list()
 
-            for route in S:
-                if route_cost_penalty == None:
-                    route_cost_penalty = [route, get_distance_between_vertices(route.coords, order.coords), None]
-                if get_distance_between_vertices(route.coords, order.coords) < route_cost_penalty[1]:
-                    route_cost_penalty = [route, get_distance_between_vertices(route.coords, order.coords), None]
+            for route in routes:
+                min_cost_for_route = None
 
-            other_routes = S.copy()
+                for vertex in route.vertices():
+                    if route_cost_penalty == None:
+                        route_cost_penalty = [route, get_distance_between_vertices(vertex.element().coords, order.coords), None, vertex]
+                    if get_distance_between_vertices(vertex.element().coords, order.coords) < route_cost_penalty[1]:
+                        route_cost_penalty = [route, get_distance_between_vertices(vertex.element().coords, order.coords), None, vertex]
+
+                    if min_cost_for_route == None:
+                        min_cost_for_route = [route, get_distance_between_vertices(vertex.element().coords, order.coords)]
+                    elif get_distance_between_vertices(vertex.element().coords, order.coords) < min_cost_for_route[1]:
+                        min_cost_for_route = [route, get_distance_between_vertices(vertex.element().coords, order.coords)]
+                min_cost_for_routes.append(min_cost_for_route)
+
+            # best route found. now caculate the penalty using the best cost for other routess
+            other_routes = routes.copy()
             other_routes.remove(route_cost_penalty[0])
-            # best route found. now caculate the penalty
-            route_cost_penalty[2] = calculate_penalty(order, route_cost_penalty[1], other_routes)
+            route_cost_penalty[2] = 0
+            for min_cost_for_route in min_cost_for_routes:
+                if min_cost_for_route[0] != route_cost_penalty[0]:
+                    route_cost_penalty[2] += min_cost_for_route[1]
+
+            # add to list of all order,root cost penalties
             order_rcps.append([order, route_cost_penalty])
 
-            #construct fractional sublist of
+        print('#########')
+        for order_rcp in order_rcps:
+            pass
+            #print(order_rcp[1][0].id)
+        print('#########')
+        # get largest penalty orders
+        largest_penalty_orders = sorted(order_rcps, key=lambda x: x[1][2], reverse=True)
+        added_order_rcp = largest_penalty_orders[0]
+        
+        # now route this order
+        added_order = routes[routes.index(added_order_rcp[1][0])].add_vertex(added_order_rcp[0])
 
-        if(len(order_rcps) >= 5):
-            largest_penalty_orders = sorted(order_rcps, key=lambda x: x[1][2], reverse=True)[:(len(order_rcps) // 5)]
-        else:
-            largest_penalty_orders = sorted(order_rcps, key=lambda x: x[1][2], reverse=True)
-
-        added_order_rcp = random.choice(largest_penalty_orders)
-        added_order = routes[added_order_rcp[1][0]].add_vertex(added_order_rcp[0])
-        #routes[added_order_rcp[1][0]].add_edge(added_order, routes[added_order_rcp[1][0]].get_vertex(added_order_rcp[1][0]), int(round(added_order_rcp[1][1], 0)))
-
+        
+        # add edge between existing vertex
+        try:
+            routes[routes.index(added_order_rcp[1][0])].add_edge(added_order_rcp[1][3], added_order, 3)
+            #routes[routes.index(added_order_rcp[1][0])].add_edge(routes[routes.index(added_order_rcp[1][0])].vertices()[len(routes[routes.index(added_order_rcp[1][0])].vertices()) - 3], added_order, 3)
+        except Exception as e:
+            print(e)
+        
 
         unscheduled_orders.remove(added_order_rcp[0])
 
     # routes now filled with vertices
     # construct the best edges
-
+    '''
     for route in routes.values():
 
         remaining_vertices = route.vertices()[1:].copy()
@@ -177,7 +209,7 @@ def main_routing(unscheduled_orders, S, routes):
                 break
 
         route.add_edge(remaining_vertices[0], route.vertices()[0], get_distance_between_vertices(remaining_vertices[0].element().coords, route.vertices()[0].element().coords))
-
+    '''
     return routes
 
 def grasp(orders):
@@ -189,13 +221,11 @@ def grasp(orders):
     unscheduled_orders = L + L_comp
 
     #plot_convex_hull(S, L_points, 'bo')
+    #plot_convex_hull(routes.vertices(), L_points, 'bo')
+
 
     routes = main_routing(unscheduled_orders, S, routes)
 
-
-    #print(routes)
-    #plot_convex_hull(routes.vertices(), L_points, 'bo')
-    #print(routes.values().num_edges())
     plt.figure()
     P = list()
     for order in orders:
@@ -209,7 +239,10 @@ def grasp(orders):
     #plt.plot([P[-1,0],P[0,0]],[P[-1,1],P[0,1]], 'b-', picker=5)
     #plt.plot(P[:,0],P[:,1], 'b')
     plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], '*g')
-    for route in routes.values():
+    colors = ['r', 'b', 'g', 'b']
+    i = 0
+   
+    for route in routes:
         for edge in route.edges():
             vertices = edge.vertices()
             try:
@@ -218,7 +251,8 @@ def grasp(orders):
             except AttributeError:
                 x_values = [vertices[0].element().coords[0], vertices[1].element()[0]]
                 y_values = [vertices[0].element().coords[1], vertices[1].element()[1]]
-            plt.plot(x_values, y_values)
+            plt.plot(x_values, y_values, colors[i])
+        i += 1
 
 
         #print(vertices[0].element().id)

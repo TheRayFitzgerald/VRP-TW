@@ -1,3 +1,4 @@
+from random import randint
 """ Sample solutions for Lab 05.
 
     Implements the graph as a map of (vertex,edge-map) pairs.
@@ -100,9 +101,10 @@ class Graph:
     #    Each edge set is also maintained as a dictionary,
     #    with the opposite vertex as the key and the edge object as the value.
 
-    def __init__(self):
+    def __init__(self, id):
         """ Create an initial empty graph. """
         self._structure = dict()
+        self._id = id
 
     def __str__(self):
         """ Return a string representation of the graph. """
@@ -118,7 +120,9 @@ class Graph:
         return hstr + vstr + estr
 
     # -----------------------------------------------------------------------#
-
+    @property
+    def id(self):
+        return self._id
     # ADT methods to query the graph
 
     def num_vertices(self):
@@ -239,7 +243,11 @@ class Graph:
             w - a vertex object
             element - a label
         """
-        if v not in self._structure or w not in self._structure:
+        if v not in self._structure:
+            print('v')
+            return None
+        if w not in self._structure:
+            print('w')
             return None
         e = Edge(v, w, element)
         self._structure[v][w] = e

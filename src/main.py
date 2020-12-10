@@ -29,7 +29,7 @@ def main():
     '''
 
     #create a list of orders
-    orders = create_orders(100)
+    orders = create_orders(50)
     grasp(orders)
     '''
     print('\nUnsorted orders: ')
@@ -47,7 +47,7 @@ def main():
 def create_orders(quantity):
     orders = list()
     for i in range (1, quantity):
-        coords = (np.random.randint(0,300),np.random.randint(0,300))
+        coords = (random.randrange(100,200),random.randrange(100,200))
         orders.append(Order(i, 'ray', coords, '13:05', '14:30', randrange(30)))
 
     return orders
