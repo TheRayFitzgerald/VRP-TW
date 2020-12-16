@@ -212,6 +212,11 @@ class Graph:
         self._structure[v] = dict()
         return v
 
+    def add_existing_vertex(self, vertex):
+
+        self._structure[vertex] = dict()
+        return vertex
+
     def add_vertex_if_new(self, element):
         """ Add and return a vertex with element, if not already in graph.
 

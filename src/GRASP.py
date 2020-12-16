@@ -11,7 +11,10 @@ import random, operator, time
 import numpy as np
 from collections import Counter
 
+from py2opt.routefinder import RouteFinder
+
 DEPOT_COORDS = (150, 150)
+MAX_NUMBER_OF_ROUTES = 3
 
 def sort_L_comp(L_comp):
     unsorted_list = list()
@@ -55,7 +58,7 @@ def route_initialization(L, L_comp):
     # check this line with KB
     L.remove(max(L, key=attrgetter('distance')))
 
-    while len(S) < 3:
+    while len(S) < MAX_NUMBER_OF_ROUTES:
 
         # find order that maximises sum of distances from existing seeds in S
         j = (None, 0)
@@ -123,13 +126,25 @@ def calculate_penalty(order, min_cost, other_routes):
 
     return penalty
 
+def get_distance_matrix(route):
+
+    distance_matrix = list()
+    for origin_vertex in route.vertices():
+        distances_for_vertex = list()
+
+        for destination_vertex in route.vertices():    
+            distance = get_distance_between_vertices(origin_vertex.element().coords, destination_vertex.element().coords)
+            distances_for_vertex.append(distance)
+
+        distance_matrix.append(distances_for_vertex)
+
+    return distance_matrix
+
 def main_routing(unscheduled_orders, S, routes):
 
     # find the min insertion cost and the best route
 
-
     while(len(unscheduled_orders) > 0):
-        print(len(routes))
         #print(len(unscheduled_orders))
         order_rcps = list()
         for order in unscheduled_orders:
@@ -140,15 +155,19 @@ def main_routing(unscheduled_orders, S, routes):
                 min_cost_for_route = None
 
                 for vertex in route.vertices():
-                    if route_cost_penalty == None:
-                        route_cost_penalty = [route, get_distance_between_vertices(vertex.element().coords, order.coords), None, vertex]
-                    if get_distance_between_vertices(vertex.element().coords, order.coords) < route_cost_penalty[1]:
-                        route_cost_penalty = [route, get_distance_between_vertices(vertex.element().coords, order.coords), None, vertex]
+                    if route.degree(vertex) < 2:
 
-                    if min_cost_for_route == None:
-                        min_cost_for_route = [route, get_distance_between_vertices(vertex.element().coords, order.coords)]
-                    elif get_distance_between_vertices(vertex.element().coords, order.coords) < min_cost_for_route[1]:
-                        min_cost_for_route = [route, get_distance_between_vertices(vertex.element().coords, order.coords)]
+                        # get the optimum route and its associated cost.
+                        if route_cost_penalty == None:
+                            route_cost_penalty = [route, get_distance_between_vertices(vertex.element().coords, order.coords), None, vertex]
+                        if get_distance_between_vertices(vertex.element().coords, order.coords) < route_cost_penalty[1]:
+                            route_cost_penalty = [route, get_distance_between_vertices(vertex.element().coords, order.coords), None, vertex]
+
+                        # get minimum cost for each route. To be used in calculating penalty.
+                        if min_cost_for_route == None:
+                            min_cost_for_route = [route, get_distance_between_vertices(vertex.element().coords, order.coords)]
+                        elif get_distance_between_vertices(vertex.element().coords, order.coords) < min_cost_for_route[1]:
+                            min_cost_for_route = [route, get_distance_between_vertices(vertex.element().coords, order.coords)]
                 min_cost_for_routes.append(min_cost_for_route)
 
             # best route found. now caculate the penalty using the best cost for other routess
@@ -162,11 +181,6 @@ def main_routing(unscheduled_orders, S, routes):
             # add to list of all order,root cost penalties
             order_rcps.append([order, route_cost_penalty])
 
-        print('#########')
-        for order_rcp in order_rcps:
-            pass
-            #print(order_rcp[1][0].id)
-        print('#########')
         # get largest penalty orders
         largest_penalty_orders = sorted(order_rcps, key=lambda x: x[1][2], reverse=True)
         added_order_rcp = largest_penalty_orders[0]
@@ -212,6 +226,30 @@ def main_routing(unscheduled_orders, S, routes):
     '''
     return routes
 
+# takes routes and utilises 2-opt to imrpove the routes
+def two_opt_route_improve(routes):
+
+    improved_routes = list()
+    for i in range(len(routes)):
+
+        dist_mat = get_distance_matrix(routes[i])
+        route_finder = RouteFinder(dist_mat, routes[i].vertices(), iterations=5)
+        best_distance, best_route = route_finder.solve()
+
+        improved_route = Graph('4')
+
+        for previous, current in zip(best_route, best_route[1:]):
+            v1 = improved_route.add_existing_vertex(routes[i].get_vertex(previous.element()))
+            v2 = improved_route.add_existing_vertex(routes[i].get_vertex(current.element()))
+
+            improved_route.add_edge(v1, v2, 0)
+
+        improved_route.add_edge(improved_route.vertices()[-1], improved_route.vertices()[0], 0)
+        improved_routes.append(improved_route)
+
+    return improved_routes
+
+
 def grasp(orders):
 
     L_points, L = GrahamScan(orders)
@@ -225,6 +263,8 @@ def grasp(orders):
 
 
     routes = main_routing(unscheduled_orders, S, routes)
+    improved_routes = two_opt_route_improve(routes)
+
 
     plt.figure()
     P = list()
@@ -239,7 +279,8 @@ def grasp(orders):
     #plt.plot([P[-1,0],P[0,0]],[P[-1,1],P[0,1]], 'b-', picker=5)
     #plt.plot(P[:,0],P[:,1], 'b')
     plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], '*g')
-    colors = ['r', 'b', 'g', 'b']
+    colors = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
+
     i = 0
    
     for route in routes:
@@ -249,8 +290,42 @@ def grasp(orders):
                 x_values = [vertices[0].element().coords[0], vertices[1].element().coords[0]]
                 y_values = [vertices[0].element().coords[1], vertices[1].element().coords[1]]
             except AttributeError:
-                x_values = [vertices[0].element().coords[0], vertices[1].element()[0]]
-                y_values = [vertices[0].element().coords[1], vertices[1].element()[1]]
+                x_values = [vertices[0].element()[0], vertices[1].element()[0]]
+                y_values = [vertices[0].element()[1], vertices[1].element()[1]]
+            plt.plot(x_values, y_values, colors[i])
+        i += 1
+
+
+        #print(vertices[0].element().id)
+        #plt.plot(vertices[0].element().coords, vertices[1].element().coords)
+    #plt.axis('off')
+    plt.show()
+
+    plt.figure()
+    P = list()
+    for order in orders:
+        P.append(order.coords)
+    plt.scatter(*zip(*P))
+    P = np.array(P)
+
+
+
+    # plt.plot(P[:,0],P[:,1], 'b-', picker=5)
+    #plt.plot([P[-1,0],P[0,0]],[P[-1,1],P[0,1]], 'b-', picker=5)
+    #plt.plot(P[:,0],P[:,1], 'b')
+    plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], '*g')
+    colors = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
+    i = 0
+   
+    for route in improved_routes:
+        for edge in route.edges():
+            vertices = edge.vertices()
+            try:
+                x_values = [vertices[0].element().coords[0], vertices[1].element().coords[0]]
+                y_values = [vertices[0].element().coords[1], vertices[1].element().coords[1]]
+            except AttributeError:
+                x_values = [vertices[0].element()[0], vertices[1].element()[0]]
+                y_values = [vertices[0].element()[1], vertices[1].element()[1]]
             plt.plot(x_values, y_values, colors[i])
         i += 1
 

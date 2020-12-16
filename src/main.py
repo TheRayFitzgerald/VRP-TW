@@ -15,6 +15,8 @@ all_orders = list()
 all_users = list()
 all_vans = list()
 
+NUMBER_OF_ORDERS = 80
+
 
 
 def main():
@@ -29,7 +31,7 @@ def main():
     '''
 
     #create a list of orders
-    orders = create_orders(50)
+    orders = create_orders(NUMBER_OF_ORDERS)
     grasp(orders)
     '''
     print('\nUnsorted orders: ')
