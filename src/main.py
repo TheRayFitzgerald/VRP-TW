@@ -15,9 +15,7 @@ all_orders = list()
 all_users = list()
 all_vans = list()
 
-NUMBER_OF_ORDERS = 80
-
-
+NUMBER_OF_ORDERS = 60
 
 def main():
     #create a new van and courier
@@ -49,14 +47,13 @@ def main():
 def create_orders(quantity):
     orders = list()
     for i in range (1, quantity):
-        coords = (random.randrange(100,200),random.randrange(100,200))
+        coords = (random.randrange(0,300),random.randrange(0,300))
         orders.append(Order(i, 'ray', coords, '13:05', '14:30', randrange(30)))
 
     return orders
 
 
-
-
 if __name__ == '__main__':
 
-    main()
+    for i in range(1):
+        main()

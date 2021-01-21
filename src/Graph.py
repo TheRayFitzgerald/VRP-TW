@@ -1,4 +1,5 @@
 from random import randint
+import time
 """ Sample solutions for Lab 05.
 
     Implements the graph as a map of (vertex,edge-map) pairs.
@@ -8,13 +9,14 @@ from random import randint
 class Vertex:
     """ A Vertex in a graph. """
 
-    def __init__(self, element):
+    def __init__(self, element, seed=False):
         """ Create a vertex, with a data element.
 
         Args:
             element - the data or label to be associated with the vertex
         """
         self._element = element
+        self._seed = seed
 
     def __str__(self):
         """ Return a string representation of the vertex. """
@@ -31,6 +33,11 @@ class Vertex:
     def element(self):
         """ Return the data for the vertex. """
         return self._element
+
+    @property
+    def seed(self):
+
+        return self._seed
 
 
 class Edge:
@@ -154,6 +161,13 @@ class Graph:
                 return v
         return None
 
+    def get_vertex_by_id(self, id):
+
+        for v in self._structure:
+            if v.element().id == id:
+                return v
+        return None 
+
     def edges(self):
         """ Return a list of all edges in the graph. """
         edgelist = []
@@ -198,22 +212,29 @@ class Graph:
         """
         return len(self._structure[v])
 
+    def get_vertex_position(self, v):
+
+        return list(self._structure).index(v)
+
     # ----------------------------------------------------------------------#
 
     # ADT methods to modify the graph
 
-    def add_vertex(self, element):
+    def add_vertex(self, element, seed=False):
         """ Add a new vertex with data element.
 
         If there is already a vertex with the same data element,
         this will create another vertex instance.
         """
-        v = Vertex(element)
+        v = Vertex(element, seed)
         self._structure[v] = dict()
         return v
 
     def add_existing_vertex(self, vertex):
 
+        for v in self._structure:
+            if v == vertex:
+                return v
         self._structure[vertex] = dict()
         return vertex
 
@@ -234,6 +255,10 @@ class Graph:
                 return v
         return self.add_vertex(element)
 
+    def remove_vertex(self, vertex):
+
+        return self._structure.pop(vertex, None)
+
     def add_edge(self, v, w, element):
         """ Add and return an edge between two vertices v and w, with  element.
 
@@ -250,13 +275,19 @@ class Graph:
         """
         if v not in self._structure:
             print('v')
+            time.sleep(10)
             return None
         if w not in self._structure:
             print('w')
+            time.sleep(10)
             return None
         e = Edge(v, w, element)
-        self._structure[v][w] = e
-        self._structure[w][v] = e
+        try:
+            self._structure[v][w] = e
+            self._structure[w][v] = e
+        except Exception as e:
+            print(e)
+            print('cee')
         return e
 
     def add_edge_pairs(self, elist):
@@ -267,6 +298,23 @@ class Graph:
         """
         for (v, w) in elist:
             self.add_edge(v, w, None)
+
+    def remove_edge(self, edge):
+
+        try:
+            v = edge.vertices()[0]
+            w = edge.vertices()[1]
+
+            self._structure[v].pop(w, None)
+            self._structure[w].pop(v, None)
+
+        except:
+            pass
+
+    def erase(self):
+        self._structure = dict()
+
+
 
     # ---------------------------------------------------------------------#
 
