@@ -7,7 +7,7 @@ from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
 from Graph import Graph, Vertex
 import matplotlib.pyplot as plt
-import random, operator, time, copy
+import random, operator, time, copy, pickle
 import numpy as np
 from collections import Counter
 
@@ -338,7 +338,7 @@ def local_search2(routes):
                     improved_origin_route = copy.deepcopy(improved_routes[i])
 
                     if origin_route.degree(order) > 2:
-                        time.sleep(1)
+                        # time.sleep(1)
                         print('TOO MANY EDGES')
 
                     print('POSITION')
@@ -370,10 +370,16 @@ def local_search2(routes):
                     improved_other_route.add_edge(order, current, get_distance_between_vertices(order.element().coords, current.element().coords))
 
                     # improved_routes[j] = improved_other_route
+                    if best_new_position_route != None:
+                        if get_route_distance(improved_other_route) < get_route_distance(best_new_position_route[0]):
+                            print('\n1')
+                            # time.sleep(5)
 
                     # find the new position with the lowest cost
                     if best_new_position_route == None or \
                     get_route_distance(improved_other_route) < get_route_distance(best_new_position_route[0]):
+                        print('\n2')
+                        # time.sleep(5)
                         best_new_position_route = [improved_other_route, j, previous.element().id, current.element().id]
                     '''
                     # make reparations
@@ -411,15 +417,19 @@ def local_search2(routes):
                 < (get_route_distance(routes[routes.index(other_routes[best_new_position_route[1]])])):
 
                 print('success')
-                time.sleep(1)
+                # time.sleep(1)
                 local_search_actioned = True
 
                 original_edges = routes[i].get_edges(order)
                 print(original_edges)
-                time.sleep(1)
+                # time.sleep(1)
                 v1 = original_edges[0].opposite(order)
                 v2 = original_edges[1].opposite(order)
+                
+                # remove order from original route
+                routes[i].remove_vertex(order)
 
+                # remove it's connected edges
                 routes[i].remove_edge(original_edges[0])
                 routes[i].remove_edge(original_edges[1])
                 # connect the loose vertices in origin route
@@ -468,6 +478,24 @@ def local_search2(routes):
     # routes[i].erase()
     return (routes, local_search_actioned)
 
+def two_opt_ls_iterator(routes, n_rounds):
+
+    with open("distances.txt", "a") as f:
+        f.write("%f\n" % get_overall_distance(routes))
+    best_distance = get_overall_distance(routes)
+    for i in range(n_rounds):
+        while get_overall_distance(routes) >= best_distance:
+            routes, local_search_actioned = local_search2(routes)
+            routes = two_opt_route_improve(routes)
+
+            with open("distances.txt", "a") as f:
+                f.write("%f\n" % get_overall_distance(routes))
+
+        best_distance = get_overall_distance(routes)
+
+    return routes
+
+
 def grasp(orders):
 
     L_points, L = GrahamScan(orders)
@@ -482,13 +510,21 @@ def grasp(orders):
 
     routes = main_routing(unscheduled_orders, S, routes)
     improved_routes = two_opt_route_improve(routes)
-    plot_routes(orders, improved_routes, "2-opt improved routes")
+    with open('routes.pkl', 'wb') as output:
+        pickle.dump(improved_routes, output, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(orders, output, pickle.HIGHEST_PROTOCOL)
+    plot_routes(orders, improved_routes, "2-opt improved routes ## check")
+
+    
+
     with open("distances.txt", "a") as f:
         f.write("%f\n" % get_overall_distance(improved_routes))
     
     print('\n\n')
     print(get_overall_distance(improved_routes))
     print('\n\n')
+
+    
 
     local_search_routes, local_search_actioned = local_search2(improved_routes.copy())
 
@@ -514,12 +550,15 @@ def grasp(orders):
     # local_search_routes = local_search2(improved_routes.copy())
     print(local_search_routes == improved_routes)
     # plot_routes(orders, routes, "initial greedy routes")
-    
-    if local_search_actioned:
-        print('YES')
-        # final_routes = two_opt_route_improve(local_search_routes)
-        # plot_routes(orders, final_routes, "local-search improved routes")
+    final_routes = two_opt_ls_iterator(local_search_routes, 3)
+    plot_routes(orders, final_routes, "2nd round two-opt improve")
+
+    if local_search_actioned and 7 == 6:
         plot_routes(orders, local_search_routes, "local-search improved routes")
+
+        final_routes = two_opt_ls_iterator(local_search_routes, 5)
+        plot_routes(orders, final_routes, "2nd round two-opt improve")
+
         print('\n\n')
         print(get_overall_distance(final_routes))
         print('\n\n')
@@ -529,18 +568,28 @@ def grasp(orders):
     with open("distances.txt", "a") as f:
             f.write("\n\n######\n\n")
     
-
+def set_id_by_position(routes):
+    for route in routes:
+        for pos, order in enumerate(route.vertices()):
+            order.element().id = pos
+    
+    return routes
     
 
-def plot_routes(orders, routes, title="untitled"):
+def plot_routes(routes, title="untitled", labeled=False):
 
-    plt.figure()
+    fig = plt.figure()
     plt.suptitle(title, fontsize=20)
+    ax = fig.add_subplot(111)
+
     P = list()
-    for order in orders:
-        P.append(order.coords)
+    for route in routes:
+        for order in route.vertices():
+            P.append(order.element().coords)
+            plt.annotate(order.element().id, (order.element().coords[0], order.element().coords[1]))
     plt.scatter(*zip(*P))
     P = np.array(P)
+
 
     # plt.plot(P[:,0],P[:,1], 'b-', picker=5)
     #plt.plot([P[-1,0],P[0,0]],[P[-1,1],P[0,1]], 'b-', picker=5)
@@ -548,8 +597,10 @@ def plot_routes(orders, routes, title="untitled"):
     plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], '*g')
     colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
     i = 0
-   
+    
     for route in routes:
+        j = 0
+        doLabel = False
         for edge in route.edges():
             vertices = edge.vertices()
             try:
@@ -559,14 +610,27 @@ def plot_routes(orders, routes, title="untitled"):
                 x_values = [vertices[0].element()[0], vertices[1].element()[0]]
                 y_values = [vertices[0].element()[1], vertices[1].element()[1]]
             plt.plot(x_values, y_values, colors[i])
+            
+            if doLabel == 7:
+                for (x, y) in zip(x_values, y_values):
+                    ax.annotate("%i" % j, xy=(x,y))
+                    vertices[0].element().id = j
+                    vertices[1].element().id = j+1
+                    j += 1
+                    doLabel = False
+            else:
+                doLabel = True
         i += 1
 
 
         #print(vertices[0].element().id)
         #plt.plot(vertices[0].element().coords, vertices[1].element().coords)
     #plt.axis('off')
+
+    
     plt.show()
 
+    
 def plot_convex_hull(orders, L, colour):
 
     P = list()
@@ -596,4 +660,25 @@ def calculate_time_ratingt(time_val):
         difference_hours = (time_val.split(':')[0] - current_time[0]) * 60
         difference_mins = time_val.split(':')[1] - current_
     100/12
+
+
+if __name__ == '__main__':
+
+    with open('routes.pkl', 'rb') as input:
+        routes = pickle.load(input)
+        orders = pickle.load(input)
+    '''
+    orders = list()
+    for route in routes:
+        for order in route.vertices():
+            orders.append(order.element())
+    '''
+    routes = set_id_by_position(routes)
+    for route in routes:
+        for pos, order in enumerate(route.vertices()):
+            print(order.element().id)
+    plot_routes(routes, "2-opt improved routes ## Load")
+
+
+
 
