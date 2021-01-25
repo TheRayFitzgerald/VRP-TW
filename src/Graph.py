@@ -302,14 +302,23 @@ class Graph:
     def remove_edge(self, edge):
 
         try:
-            v = edge.vertices()[0]
+            v = edge.vertices()[0] 
             w = edge.vertices()[1]
 
-            self._structure[v].pop(w, None)
-            self._structure[w].pop(v, None)
+            try:
+                v_to_w = self._structure[v].pop(w, None)
+                w_to_v = self._structure[w].pop(v, None)
+            except Exception as e:
+                print(e)
+                
+            if edge1 and edge2:
+                return True
 
-        except:
-            pass
+            return None
+
+        except Exception as e:
+            #print(e)
+            return None
 
     def erase(self):
         self._structure = dict()
