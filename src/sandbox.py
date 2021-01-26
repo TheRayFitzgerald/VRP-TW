@@ -22,3 +22,6 @@ print(graph.get_edges(a))
 
 graph.remove_edge(e3)
 print(graph.get_edges(b))
+
+for j in range(3,4):
+	print(j)

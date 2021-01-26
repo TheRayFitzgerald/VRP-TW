@@ -275,11 +275,11 @@ class Graph:
         """
         if v not in self._structure:
             print('v')
-            time.sleep(10)
+            # time.sleep(10)
             return None
         if w not in self._structure:
             print('w')
-            time.sleep(10)
+            # time.sleep(10)
             return None
         e = Edge(v, w, element)
         try:
@@ -310,7 +310,7 @@ class Graph:
                 w_to_v = self._structure[w].pop(v, None)
             except Exception as e:
                 print(e)
-                
+
             if edge1 and edge2:
                 return True
 
