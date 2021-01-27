@@ -9,6 +9,7 @@ class Order:
     def __init__(self, id, user, coords, placed_time, scheduled_time, size):
 
         self._id = id
+        self._uid = random.randint(0,1000)
         self._user = user
         self._coords = coords
         self._distance = sqrt((DEPOT_COORDS[0] - self._coords[0])**2 + (DEPOT_COORDS[1] - self._coords[1])**2)
@@ -28,6 +29,10 @@ class Order:
     @id.setter
     def id(self, id):
         self._id = id
+
+    @property
+    def uid(self):
+        return self._uid
 
     @property
     def user(self):

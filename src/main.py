@@ -7,7 +7,7 @@ from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
 from GRASP import grasp
 import matplotlib.pyplot as plt
-import random
+import random, pickle
 import numpy as np
 
 all_couriers = list()
@@ -15,7 +15,7 @@ all_orders = list()
 all_users = list()
 all_vans = list()
 
-NUMBER_OF_ORDERS = 60
+NUMBER_OF_ORDERS = 40
 
 def main():
     #create a new van and courier
@@ -30,7 +30,18 @@ def main():
 
     #create a list of orders
     orders = create_orders(NUMBER_OF_ORDERS)
-    grasp(orders)
+    routes = grasp(orders)
+
+    a = input("Would you like to save these Routes? [y/n]: ")
+    if a == 'y':
+        with open('routes_4.pkl', 'wb') as output:
+            pickle.dump(routes, output, pickle.HIGHEST_PROTOCOL)
+            print('Saved')
+    else:
+        print('Exiting')
+
+    
+        
     '''
     print('\nUnsorted orders: ')
     for order in orders:

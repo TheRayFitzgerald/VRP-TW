@@ -168,6 +168,12 @@ class Graph:
                 return v
         return None 
 
+    def get_vertex_by_uid(self, uid):
+        for v in self._structure:
+            if v.element().uid == uid:
+                return v
+        return None 
+
     def edges(self):
         """ Return a list of all edges in the graph. """
         edgelist = []
