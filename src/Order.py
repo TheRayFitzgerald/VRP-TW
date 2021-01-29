@@ -34,6 +34,10 @@ class Order:
     def uid(self):
         return self._uid
 
+    @uid.setter
+    def uid(self, uid):
+        self._uid = uid
+
     @property
     def user(self):
         return self._user

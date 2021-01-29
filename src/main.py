@@ -7,7 +7,7 @@ from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
 from GRASP import grasp
 import matplotlib.pyplot as plt
-import random, pickle
+import random, pickle, datetime
 import numpy as np
 
 all_couriers = list()
@@ -30,8 +30,12 @@ def main():
 
     #create a list of orders
     orders = create_orders(NUMBER_OF_ORDERS)
-    routes = grasp(orders)
 
+    for order in orders:
+        print(order.scheduled_time)
+    # routes = grasp(orders)
+
+    
     a = input("Would you like to save these Routes? [y/n]: ")
     if a == 'y':
         with open('routes_4.pkl', 'wb') as output:
@@ -39,7 +43,7 @@ def main():
             print('Saved')
     else:
         print('Exiting')
-
+    
     
         
     '''
@@ -58,8 +62,14 @@ def main():
 def create_orders(quantity):
     orders = list()
     for i in range (1, quantity):
+
+        random_hour = random.uniform(1, 2.5)
+        
+        # orders scheduled between 10:00 -> 18:00(delivery starts at 09:00)
+        scheduled_time = datetime.timedelta(hours=randrange(10, 18), minutes=randrange(0, 59))
         coords = (random.randrange(0,300),random.randrange(0,300))
-        orders.append(Order(i, 'ray', coords, '13:05', '14:30', randrange(30)))
+        # scheduled_time = random.randrange(9, 6)
+        orders.append(Order(i, 'ray', coords, '13:05', scheduled_time, randrange(30)))
 
     return orders
 

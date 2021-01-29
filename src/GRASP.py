@@ -352,11 +352,6 @@ def local_search(routes):
                     print('$$$$ Origin Route $$$$\n')
                     print(origin_route)
 
-                    original_edges = origin_route.get_edges(order)
-                    print(original_edges)
-                    v1 = original_edges[0].opposite(order)
-                    v2 = original_edges[1].opposite(order)
-
                     improved_other_route.add_existing_vertex(order)
                     
                     de0 = improved_other_route.remove_edge(improved_other_route.get_edge(start, end))
@@ -454,11 +449,15 @@ def two_opt_ls_iterator(routes, n_rounds):
 
     #with open("distances.txt", "a") as f:
      #   f.write("%f\n" % get_overall_distance(routes))
+    timeout = time.time() + 90
     best_distance = get_overall_distance(routes)
     for i in range(n_rounds):
         while get_overall_distance(routes) >= best_distance:
             routes, local_search_actioned = local_search(routes)
             routes = two_opt_route_improve(routes)
+
+            if time.time() > timeout:
+                break
 
             #with open("distances.txt", "a") as f:
              #   f.write("%f\n" % get_overall_distance(routes))
@@ -654,6 +653,11 @@ if __name__ == '__main__':
     with open('routes_safe.pkl', 'rb') as input:
         routes = pickle.load(input)
         orders = pickle.load(input)
+
+    for route in routes:
+        for vertex in route.vertices():
+            order = vertex.element()
+            order.uid = random.randint(0,1000)
     '''
     orders = list()
     for route in routes:
@@ -665,8 +669,6 @@ if __name__ == '__main__':
         f.write("%f\n" % get_overall_distance(routes))
     plot_routes(routes, "Base")
 
-    plt.show()
-
 
     local_search_routes, local_search_actioned = local_search(routes)
     plot_routes(local_search_routes, "Local Search")
@@ -675,10 +677,7 @@ if __name__ == '__main__':
     final_routes = two_opt_ls_iterator(local_search_routes, 3)
     with open("distances.txt", "a") as f:
         f.write("%f\n" % get_overall_distance(final_routes))
-    plot_routes(final_routes, "Multiple Local Searches")
+    plot_routes(final_routes, "Multiple Local Searches and 2-Opt Improvements")
 
     plt.show()
-
-
-
 
