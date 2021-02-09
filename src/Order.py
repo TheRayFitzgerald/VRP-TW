@@ -1,12 +1,14 @@
-import time
+import time, datetime
 import random
 from math import sqrt
 
 DEPOT_COORDS = (150, 150)
+# aribtrary speed: 20km/h
+SPEED = 20
 
 class Order:
 
-    def __init__(self, id, user, coords, placed_time, scheduled_time, size):
+    def __init__(self, id, user, coords, scheduled_time, size):
 
         self._id = id
         self._uid = random.randint(0,1000)
@@ -16,6 +18,7 @@ class Order:
         self._placed_time = time.time()
         self._scheduled_time = scheduled_time
         self._time_to_delivery = random.randrange(30)
+        self._slack = scheduled_time - (datetime.timedelta(hours=9) + datetime.timedelta(minutes=round(self._distance / SPEED)))
         self._size = size
 
     def __str__(self):
@@ -54,6 +57,10 @@ class Order:
     def scheduled_time(self):
         return self._scheduled_time
 
+    @scheduled_time.setter
+    def scheduled_time(self, scheduled_time):
+        self._scheduled_time = scheduled_time
+
     @property
     def size(self):
         return self._size
@@ -65,6 +72,16 @@ class Order:
     @property
     def time_to_delivery(self):
         return self._time_to_delivery
+
+    @property
+    def slack(self):
+        return self._slack
+
+    @slack.setter
+    def slack(self, slack):
+        self._slack = slack
+
+
 
 
 

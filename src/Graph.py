@@ -1,4 +1,5 @@
 from random import randint
+from math import sqrt
 import time
 """ Sample solutions for Lab 05.
 
@@ -31,6 +32,11 @@ class Vertex:
         return self._element < v.element()
 
     def element(self):
+        """ Return the data for the vertex. """
+        return self._element
+
+    @property
+    def order(self):
         """ Return the data for the vertex. """
         return self._element
 
@@ -172,7 +178,14 @@ class Graph:
         for v in self._structure:
             if v.element().uid == uid:
                 return v
-        return None 
+        return None
+
+    def get_distance_between_vertices(self, v, w):
+
+        v_coords = v.element().coords
+        w_coords = w.element().coords
+
+        return sqrt((v_coords[0] - w_coords[0])**2 + (v_coords[1] - w_coords[1])**2)
 
     def edges(self):
         """ Return a list of all edges in the graph. """
@@ -261,11 +274,27 @@ class Graph:
                 return v
         return self.add_vertex(element)
 
+    def add_vertex_between_vertices(self, v, w1, w2):
+
+        self.remove_edge(self.get_edge(w1, w2))
+        self.add_existing_vertex(v)
+        self.add_edge(w1, v)
+        self.add_edge(v, w2)
+
     def remove_vertex(self, vertex):
 
         return self._structure.pop(vertex, None)
 
-    def add_edge(self, v, w, element):
+    def remove_vertex_and_repair(self, vertex):
+
+        w1 = self.get_edges(vertex)[0].opposite(vertex)
+        w2 = self.get_edges(vertex)[1].opposite(vertex)
+        self.remove_edge(self.get_edges(vertex)[0])
+        self.remove_edge(self.get_edges(vertex)[0])
+        self.remove_vertex(vertex)
+        self.add_edge(w1, w2)
+
+    def add_edge(self, v, w):
         """ Add and return an edge between two vertices v and w, with  element.
 
         If either v or w are not vertices in the graph, does not add, and
@@ -287,7 +316,8 @@ class Graph:
             print('w')
             # time.sleep(10)
             return None
-        e = Edge(v, w, element)
+
+        e = Edge(v, w, self.get_distance_between_vertices(v, w))
         try:
             self._structure[v][w] = e
             self._structure[w][v] = e
@@ -326,8 +356,31 @@ class Graph:
             #print(e)
             return None
 
+    def complete_route(self):
+        #self.add_edge(self.vertices()[-1], self.vertices()[0])
+        for vertex in self.vertices():
+            if self.degree(vertex) == 1:
+                self.add_edge(vertex, self.vertices()[0])
+        #self.add_edge(self.edges()[-1].end(), self.edges()[0].start())
+
     def erase(self):
         self._structure = dict()
+
+    def get_nearest_vertex(self, origin_vertex):
+
+        nearest_vertex = self.vertices()[0]
+
+        for destination_vertex in self.vertices()[1:]:
+            try:
+                if self.get_distance_between_vertices(origin_vertex, destination_vertex) < self.get_distance_between_vertices(origin_vertex, nearest_vertex):
+                    nearest_vertex = vertex
+            except Exception as e:
+                print(e)
+                time.sleep(3)
+                pass
+        print('nearest vertex')
+
+        return nearest_vertex
 
 
 

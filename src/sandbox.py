@@ -1,5 +1,19 @@
 from Graph import Graph
+from Order import Order
+import datetime
 
+#a = datetime.timedelta(seconds=20)
+#b = datetime.timedelta(seconds=5)
+
+
+
+a = Order(2, 'ray', (3, 4), datetime.timedelta(seconds=20), 3)
+b = Order(2, 'ray', (3, 4), datetime.timedelta(seconds=5), 3)
+
+c = a.scheduled_time - b.scheduled_time
+print(c.seconds)
+
+'''
 graph = Graph('a')
 a = graph.add_vertex('a')
 b = graph.add_vertex('b')
@@ -25,3 +39,5 @@ print(graph.get_edges(b))
 
 for j in range(3,4):
 	print(j)
+'''
+

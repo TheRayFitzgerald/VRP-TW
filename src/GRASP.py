@@ -7,19 +7,88 @@ from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
 from Graph import Graph, Vertex
 import matplotlib.pyplot as plt
-import random, operator, time, copy, pickle
+import random, operator, time, copy, pickle, datetime
 import numpy as np
 from collections import Counter
 
 from py2opt.routefinder import RouteFinder
 
 DEPOT_COORDS = (150, 150)
+START_TIME = datetime.timedelta(hours=9)
 MAX_NUMBER_OF_ROUTES = 4
+SPEED = 2
+
 local_search_actioned = False
 colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
 
 def sort_L_comp(L_comp):
     unsorted_list = list()
+
+def calculate_slack(order):
+    return order.scheduled_time - (START_TIME + datetime.timedelta(minutes=round(order.distance / SPEED))) 
+
+def is_completed_route(route):
+
+    if route.vertices()[0] == route.vertices()[-1]:
+        print('Complete Route')
+
+    else:
+        print('Incomplete Route')
+        print(route.vertices()[0])
+        print(route.vertices()[-1])
+
+def is_completed_route2(route):
+
+    if route.edges()[0].start() == route.edges()[-1].end():
+        print('Complete Route')        
+    else:
+        print('Incomplete Route')
+
+def order_is_reachable(route, order):
+    total_time = 0
+
+    for edge in route.edges():
+        print('reachable iter')
+        start = edge.start()
+        end = edge.end()
+
+        #print('##')
+        #print(get_distance_between_vertices(start.order.coords, end.order.coords))
+        total_time += route.get_distance_between_vertices(start, end) / SPEED
+
+        if end == order:
+            print('breaking')
+            break
+        else:
+            print('not the same')
+            print(end)
+            print(order)
+            #time.sleep(3)
+
+    total_time = datetime.timedelta(minutes=total_time)
+
+    if START_TIME + total_time < order.element().scheduled_time:
+        print('good')
+        return True
+    print('bad')
+    return False
+
+def route_is_feasible(route):
+
+    for vertex in route.vertices()[1:-1]:
+        if not order_is_reachable(route, vertex):
+            return False
+
+    return True
+
+def routes_are_feasible(routes):
+
+    for route in routes:
+        if not route_is_feasible(route):
+            return False
+
+    return True
+
 
 def get_furthest_vertex(orders):
 
@@ -72,7 +141,7 @@ def get_overall_distance(routes):
 def route_initialization(L, L_comp):
 
     # sort by shortest distance from depot
-    L_comp.sort(key=lambda x: x.distance, reverse=True)
+    L_comp.sort(key=lambda x: x.distance, reverse=False)
 
     S = list()
     S.append(max(L, key=attrgetter('distance')))
@@ -131,7 +200,7 @@ def route_initialization(L, L_comp):
     i = 0
     for seed in S:
         g = Graph(i)
-        g.add_vertex(Order(0, 'ray', DEPOT_COORDS, '00:00', '00:00', 0))
+        g.add_vertex(Order(0, 'ray', DEPOT_COORDS, START_TIME, 0))
         g.add_vertex(seed, seed=True)
         routes.append(g)
         #routes[len(routes) - 1].add_vertex(Order(0, 'ray', DEPOT_COORDS, '00:00', '00:00', 0))
@@ -219,7 +288,7 @@ def main_routing(unscheduled_orders, S, routes):
         
         # add edge between existing vertex
         try:
-            routes[routes.index(added_order_rcp[1][0])].add_edge(added_order_rcp[1][3], added_order, 3)
+            routes[routes.index(added_order_rcp[1][0])].add_edge(added_order_rcp[1][3], added_order)
             #routes[routes.index(added_order_rcp[1][0])].add_edge(routes[routes.index(added_order_rcp[1][0])].vertices()[len(routes[routes.index(added_order_rcp[1][0])].vertices()) - 3], added_order, 3)
         except Exception as e:
             print(e)
@@ -253,12 +322,6 @@ def main_routing(unscheduled_orders, S, routes):
         route.add_edge(remaining_vertices[0], route.vertices()[0], get_distance_between_vertices(remaining_vertices[0].element().coords, route.vertices()[0].element().coords))
     '''
 
-    for route in routes:
-
-        route.add_existing_vertex(route.vertices()[0])
-        route.add_edge(route.vertices()[-2], route.vertices()[-1], 0)
-
-
     return routes
 
 # takes routes and utilises 2-opt to imrpove the routes
@@ -278,12 +341,11 @@ def two_opt_route_improve(routes):
             v1 = improved_route.add_existing_vertex(routes[i].get_vertex(start.element()))
             v2 = improved_route.add_existing_vertex(routes[i].get_vertex(end.element()))
 
-            improved_route.add_edge(v1, v2, get_distance_between_vertices(v1.element().coords, v2.element().coords))
-
-        distance = get_distance_between_vertices(improved_route.vertices()[-1].element().coords, improved_route.vertices()[0].element().coords)
-        improved_route.add_edge(improved_route.vertices()[-1], improved_route.vertices()[0], distance)
-        improved_routes.append(improved_route)
-
+            improved_route.add_edge(v1, v2)
+    
+        improved_route.complete_route()
+        improved_routes.append(improved_route)    
+    
     return set_id_by_position(improved_routes)
 
 
@@ -297,10 +359,11 @@ def cost_of_break(order, route):
     v1 = original_edges[0].opposite(order)
     v2 = original_edges[1].opposite(order)
 
-    d1 = get_distance_between_vertices(v1.element().coords, order.element().coords)
-    d2 = get_distance_between_vertices(order.element().coords, v2.element().coords)
+    
+    d1 = route.get_distance_between_vertices(v1, order)
+    d2 = route.get_distance_between_vertices(order, v2)
 
-    d3 = get_distance_between_vertices(v1.element().coords, v2.element().coords)
+    d3 = route.get_distance_between_vertices(v1, v2)
   
     return d3 - (d1 + d2)
 
@@ -352,11 +415,7 @@ def local_search(routes):
                     print('$$$$ Origin Route $$$$\n')
                     print(origin_route)
 
-                    improved_other_route.add_existing_vertex(order)
-                    
-                    de0 = improved_other_route.remove_edge(improved_other_route.get_edge(start, end))
-                    de1 = improved_other_route.add_edge(start, order, get_distance_between_vertices(start.element().coords, order.element().coords))
-                    de2 = improved_other_route.add_edge(order, end, get_distance_between_vertices(order.element().coords, end.element().coords))
+                    print(improved_other_route.add_vertex_between_vertices(order, start, end))
 
                     print('\n$$$$ CHANGES $$$$')
                     print(improved_other_route)
@@ -381,16 +440,9 @@ def local_search(routes):
                         
                         best_new_position_route = [copy.deepcopy(improved_other_route), j, start.element().uid, end.element().uid]
                     
-                    # Make Reparations
-                    # Removing prev -> order
-                    improved_other_route.remove_edge(improved_other_route.get_edge(start, order))
-                    # Removing order -> end
-                    improved_other_route.remove_edge(improved_other_route.get_edge(order, end))
-                    # Remove the vertex
-                    improved_other_route.remove_vertex(order)
+                    # make reparations 
+                    improved_other_route.remove_vertex_and_repair(order)
 
-                    # replace original edge
-                    improved_other_route.add_edge(start, end, get_distance_between_vertices(start.element().coords, end.element().coords))
                     print(improved_other_route)
                     print('Distance: %f' % get_route_distance(improved_other_route))
                     print('$$$$ END $$$$\n')
@@ -405,15 +457,7 @@ def local_search(routes):
                     v1 = original_edges[0].opposite(order)
                     v2 = original_edges[1].opposite(order)
 
-                    # remove it's connected edges
-                    routes[i].remove_edge(original_edges[0])
-                    routes[i].remove_edge(original_edges[1])
-                    
-                    # remove order from original route
-                    routes[i].remove_vertex(order)
-                    
-                    # connect the loose vertices in origin route
-                    routes[i].add_edge(v1, v2, get_distance_between_vertices(v1.element().coords, v2.element().coords))
+                    routes[i].remove_vertex_and_repair(order)
 
                     #-------------------------------
                     r_index = routes.index(other_routes[best_new_position_route[1]])
@@ -421,12 +465,8 @@ def local_search(routes):
                     start = routes[r_index].get_vertex_by_uid(best_new_position_route[2])
                     end = routes[r_index].get_vertex_by_uid(best_new_position_route[3])
                     
-                    # Add order to destination route. Amend the edges.
-                    routes[r_index].add_existing_vertex(order)
-                    routes[r_index].remove_edge(routes[r_index].get_edge(start, end))
-
-                    print(routes[r_index].add_edge(start, order, get_distance_between_vertices(start.element().coords, order.element().coords)))
-                    print(routes[r_index].add_edge(order, end, get_distance_between_vertices(order.element().coords, end.element().coords)))
+                    # Add order to destination route
+                    routes[r_index].add_vertex_between_vertices(order, start, end)
 
                 except Exception as e:
                     print(e)
@@ -467,7 +507,81 @@ def two_opt_ls_iterator(routes, n_rounds):
     return routes
 
 
-def grasp(orders):
+def tw_shuffle(routes):
+
+    failed_vertices = list()
+    improved_routes = list()
+    for route in routes:
+
+        improved_route = Graph('4')
+
+        # add the depot to the start and end of the improved route
+        d0 = improved_route.add_existing_vertex(route.vertices()[0])
+        d1 = improved_route.add_existing_vertex(route.vertices()[-1])
+        improved_route.add_edge(d0, d1)
+
+        
+        shuffled_vertices = route.vertices()[1:-1]
+        random.shuffle(shuffled_vertices)
+
+        for vertex in shuffled_vertices:
+            feasible_routes = list()
+            for edge in improved_route.edges():
+                print('iter')
+                start = edge.start()
+                end = edge.end()
+                print(improved_route)
+                print('\n')
+                improved_route.add_vertex_between_vertices(vertex, start, end)
+                print(improved_route)
+                
+                if route_is_feasible(improved_route):
+                    print('Feasible Route')
+                    # time.sleep(3)
+                    feasible_routes.append(copy.deepcopy(improved_route))
+
+                improved_route.remove_vertex_and_repair(vertex)
+                print('632')
+                print(improved_route)
+                for route in feasible_routes:
+                    print(route)
+
+               # time.sleep(20)
+            # iterate through all feasible routes to find the cheapest
+            try:
+                best_route = feasible_routes[0]
+                for route in feasible_routes[1:]:
+
+                    if get_route_distance(route) < get_route_distance(best_route):
+                        best_route = route
+                # make changes on the main improved route and continue
+                improved_route = best_route
+            except Exception as e:
+                print(e)
+                failed_vertices.append(vertex)
+                pass
+
+        # complete the route
+        print(improved_route.num_edges())
+        '''
+        try:
+            improved_route.add_edge(improved_route.vertices()[0], improved_route.get_nearest_vertex(improved_route.vertices()[0]))
+        except Exception as e:
+            print(e)
+        '''
+        
+        improved_route.complete_route()
+        print(improved_route.num_edges())
+        time.sleep(4)
+        # record the finalised improved route
+        improved_routes.append(improved_route)
+    for vertex in failed_vertices:
+        print('###')
+        print(vertex)
+        print('###')
+    return improved_routes
+
+def grasp(orders, graph_results=True):
 
     L_points, L = GrahamScan(orders)
     L_comp = list(set(orders) - set(L))
@@ -486,8 +600,39 @@ def grasp(orders):
 
     improved_routes = two_opt_route_improve(routes)
 
-    plot_routes(improved_routes, "Base")
-    plt.show()
+    if graph_results:
+        plot_routes(improved_routes, "1")
+    
+    tw_shuffle_routes = tw_shuffle(improved_routes)
+
+    if graph_results:
+        plot_routes(tw_shuffle_routes, "TW Shuffle")
+        plt.show()
+    ##########
+
+    L_points, L = GrahamScan(orders)
+    L_comp = list(set(orders) - set(L))
+    #plot_convex_hull(orders, L_points, '.r')
+    S, L, L_comp, routes = route_initialization(L, L_comp)
+    unscheduled_orders = L + L_comp
+    
+    #plot_convex_hull(S, L_points, 'bo')
+    #plot_convex_hull(routes.vertices(), L_points, 'bo')
+
+
+    routes = main_routing(unscheduled_orders, S, routes)
+
+    with open("distances.txt", "a") as f:
+        f.write("%f\n" % get_overall_distance(routes))
+
+    improved_routes = two_opt_route_improve(routes)
+    #return improved_routes
+    if graph_results:
+        plot_routes(improved_routes, "2")
+
+
+    
+
     with open('routes.pkl', 'wb') as output:
         pickle.dump(improved_routes, output, pickle.HIGHEST_PROTOCOL)
         pickle.dump(orders, output, pickle.HIGHEST_PROTOCOL)
@@ -498,27 +643,30 @@ def grasp(orders):
     #with open("distances.txt", "a") as f:
      #   f.write("%f\n" % get_overall_distance(improved_routes))
     local_search_routes = improved_routes
-    for i in range(5):
+    for i in range(3):
         local_search_routes = local_search(local_search_routes)[0]
 
     #local_search_routes, local_search_actioned = local_search(improved_routes.copy())
-    plot_routes(local_search_routes, "Local Search")
-    plt.show()
+    if graph_results:
+        plot_routes(local_search_routes, "Local Search")
+        plt.show()
 
 
-    for i in range(5):
+    for i in range(3):
         local_search_routes = two_opt_route_improve(local_search_routes)
-
+    return local_search_routes
     #local_search_routes, local_search_actioned = local_search(improved_routes.copy())
-    plot_routes(local_search_routes, "Two opt improve Search")
-    plt.show()
+    if graph_results:
+        plot_routes(local_search_routes, "Two opt improve Search")
+        plt.show()
     
 
     final_routes = two_opt_ls_iterator(local_search_routes, 1)
     with open("distances.txt", "a") as f:
         f.write("%f\n" % get_overall_distance(final_routes))
-    plot_routes(final_routes, "Multiple Local Searches")
-    plt.show()
+    if graph_results:
+        plot_routes(final_routes, "Multiple Local Searches")
+        plt.show()
 
     return final_routes
     '''
@@ -576,17 +724,23 @@ def set_id_by_position(routes):
 
 def plot_routes(routes, title="untitled", labeled=True):
 
+
     fig = plt.figure()
     plt.suptitle(title, fontsize=20)
     ax = fig.add_subplot(111)
 
     P = list()
+    C = list()
     for route in routes:
         for order in route.vertices():
             P.append(order.element().coords)
+            # time_to_delivery = datetime.timedelta(hours=9) - order.order.scheduled_time
+            C.append(np.cos(order.order.slack.total_seconds()))
             if labeled:
                 plt.annotate(order.element().id, (order.element().coords[0], order.element().coords[1]))
-    plt.scatter(*zip(*P))
+    plt.scatter(*zip(*P), c=C)
+    # plt.legend()
+    #plt.scatter(*zip(*P))
     P = np.array(P)
 
 
@@ -658,6 +812,9 @@ if __name__ == '__main__':
         for vertex in route.vertices():
             order = vertex.element()
             order.uid = random.randint(0,1000)
+            if isinstance(order.scheduled_time, str):
+                order.scheduled_time = START_TIME
+            order.slack = order.scheduled_time - (START_TIME + datetime.timedelta(minutes=round(order.distance / SPEED)))
     '''
     orders = list()
     for route in routes:
@@ -668,7 +825,7 @@ if __name__ == '__main__':
     with open("distances.txt", "a") as f:
         f.write("%f\n" % get_overall_distance(routes))
     plot_routes(routes, "Base")
-
+    plt.show()
 
     local_search_routes, local_search_actioned = local_search(routes)
     plot_routes(local_search_routes, "Local Search")
