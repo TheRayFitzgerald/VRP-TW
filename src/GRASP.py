@@ -16,7 +16,7 @@ from py2opt.routefinder import RouteFinder
 DEPOT_COORDS = (150, 150)
 START_TIME = datetime.timedelta(hours=9)
 MAX_NUMBER_OF_ROUTES = 4
-SPEED = 2
+SPEED = 5
 
 local_search_actioned = False
 colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
@@ -47,35 +47,22 @@ def is_completed_route2(route):
 def order_is_reachable(route, order):
     total_time = 0
 
-    for edge in route.edges():
-        print('reachable iter')
+    for edge in route.edges_in_order():
         start = edge.start()
         end = edge.end()
 
-        #print('##')
-        #print(get_distance_between_vertices(start.order.coords, end.order.coords))
         total_time += route.get_distance_between_vertices(start, end) / SPEED
 
         if end == order:
-            print('breaking')
             break
-        else:
-            print('not the same')
-            print(end)
-            print(order)
-            #time.sleep(3)
 
     total_time = datetime.timedelta(minutes=total_time)
 
-    if START_TIME + total_time < order.element().scheduled_time:
-        print('good')
-        return True
-    print('bad')
-    return False
+    return START_TIME + total_time < order.element().scheduled_time
 
 def route_is_feasible(route):
 
-    for vertex in route.vertices()[1:-1]:
+    for vertex in route.vertices()[1:]:
         if not order_is_reachable(route, vertex):
             return False
 
@@ -141,13 +128,13 @@ def get_overall_distance(routes):
 def route_initialization(L, L_comp):
 
     # sort by shortest distance from depot
-    L_comp.sort(key=lambda x: x.distance, reverse=False)
+    L_comp.sort(key=lambda x: x.slack, reverse=False)
 
     S = list()
-    S.append(max(L, key=attrgetter('distance')))
+    S.append(max(L, key=attrgetter('slack')))
 
     # check this line with KB
-    L.remove(max(L, key=attrgetter('distance')))
+    L.remove(max(L, key=attrgetter('slack')))
 
     while len(S) < MAX_NUMBER_OF_ROUTES:
 
@@ -512,74 +499,57 @@ def tw_shuffle(routes):
     failed_vertices = list()
     improved_routes = list()
     for route in routes:
-
+        failed_vertices_for_route = list()
         improved_route = Graph('4')
-
-        # add the depot to the start and end of the improved route
-        d0 = improved_route.add_existing_vertex(route.vertices()[0])
-        d1 = improved_route.add_existing_vertex(route.vertices()[-1])
-        improved_route.add_edge(d0, d1)
-
-        
-        shuffled_vertices = route.vertices()[1:-1]
+        shuffled_vertices = route.vertices()[1:]
         random.shuffle(shuffled_vertices)
 
+        # add the depot to the start of the improved route
+        d0 = improved_route.add_existing_vertex(route.vertices()[0])
+        # add the first vertex from the shuffled vertices to begin
+        d1 = improved_route.add_existing_vertex(shuffled_vertices.pop(0))
+        # connect the first vertex to the depot
+        improved_route.add_edge(d0, d1)
+    
         for vertex in shuffled_vertices:
             feasible_routes = list()
             for edge in improved_route.edges():
-                print('iter')
+                
                 start = edge.start()
                 end = edge.end()
-                print(improved_route)
-                print('\n')
                 improved_route.add_vertex_between_vertices(vertex, start, end)
-                print(improved_route)
-                
+            
                 if route_is_feasible(improved_route):
-                    print('Feasible Route')
-                    # time.sleep(3)
                     feasible_routes.append(copy.deepcopy(improved_route))
 
                 improved_route.remove_vertex_and_repair(vertex)
-                print('632')
-                print(improved_route)
-                for route in feasible_routes:
-                    print(route)
-
-               # time.sleep(20)
+                
             # iterate through all feasible routes to find the cheapest
             try:
                 best_route = feasible_routes[0]
                 for route in feasible_routes[1:]:
-
                     if get_route_distance(route) < get_route_distance(best_route):
                         best_route = route
+
                 # make changes on the main improved route and continue
                 improved_route = best_route
+
+            # no routes found for this vertex
             except Exception as e:
                 print(e)
-                failed_vertices.append(vertex)
+                failed_vertices_for_route.append(vertex)
                 pass
 
-        # complete the route
-        print(improved_route.num_edges())
-        '''
-        try:
-            improved_route.add_edge(improved_route.vertices()[0], improved_route.get_nearest_vertex(improved_route.vertices()[0]))
-        except Exception as e:
-            print(e)
-        '''
-        
+        # complete the route 
         improved_route.complete_route()
-        print(improved_route.num_edges())
-        time.sleep(4)
         # record the finalised improved route
         improved_routes.append(improved_route)
+        failed_vertices.append(failed_vertices_for_route)
     for vertex in failed_vertices:
         print('###')
         print(vertex)
         print('###')
-    return improved_routes
+    return improved_routes, failed_vertices
 
 def grasp(orders, graph_results=True):
 
@@ -601,14 +571,32 @@ def grasp(orders, graph_results=True):
     improved_routes = two_opt_route_improve(routes)
 
     if graph_results:
-        plot_routes(improved_routes, "1")
-    
-    tw_shuffle_routes = tw_shuffle(improved_routes)
+        plot_routes(improved_routes, "Two-opt improved routes")
+    for i in range(1):
+        tw_shuffle_routes, failed_vertices = tw_shuffle(routes)
 
+
+    for failed_vertices_for_route in failed_vertices:
+        print('################')
+        print('Route: %s' % colors[failed_vertices.index(failed_vertices_for_route)])
+        for vertex in failed_vertices_for_route:
+            print(vertex + vertex.order.slack)
+        print('################')
+
+    print('Routes are Feasible: %s' % routes_are_feasible(tw_shuffle_routes))
+        
     if graph_results:
         plot_routes(tw_shuffle_routes, "TW Shuffle")
         plt.show()
-    ##########
+
+    return tw_shuffle_routes
+
+    for i in range(5):
+        improved_routes = two_opt_route_improve(tw_shuffle_routes)
+
+    plot_routes(improved_routes, "2")
+    plt.show()
+
 
     L_points, L = GrahamScan(orders)
     L_comp = list(set(orders) - set(L))
@@ -804,10 +792,12 @@ def calculate_time_ratingt(time_val):
 
 if __name__ == '__main__':
 
-    with open('routes_safe.pkl', 'rb') as input:
-        routes = pickle.load(input)
+    with open('orders.pkl', 'rb') as input:
         orders = pickle.load(input)
 
+    routes = grasp(orders)
+
+    '''
     for route in routes:
         for vertex in route.vertices():
             order = vertex.element()
@@ -816,12 +806,14 @@ if __name__ == '__main__':
                 order.scheduled_time = START_TIME
             order.slack = order.scheduled_time - (START_TIME + datetime.timedelta(minutes=round(order.distance / SPEED)))
     '''
+    '''
     orders = list()
     for route in routes:
         for order in route.vertices():
             orders.append(order.element())
     '''
-    routes = set_id_by_position(routes)
+    #routes = set_id_by_position(routes)
+    '''
     with open("distances.txt", "a") as f:
         f.write("%f\n" % get_overall_distance(routes))
     plot_routes(routes, "Base")
@@ -837,4 +829,4 @@ if __name__ == '__main__':
     plot_routes(final_routes, "Multiple Local Searches and 2-Opt Improvements")
 
     plt.show()
-
+    '''

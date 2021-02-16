@@ -197,6 +197,22 @@ class Graph:
                     edgelist.append(self._structure[v][w])
         return edgelist
 
+    def edges_in_order(self):
+        """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
+        edgelist = [edge for edge in self.get_edges(self.vertices()[0]) if edge.start() == self.vertices()[0]]
+        #print(self.get_edges(self.vertices()[0])[0])
+        #print(edgelist[-1])
+        #time.sleep(4)
+        while (self.vertices()[0] not in edgelist[-1].vertices() and len(edgelist) != 1) or len(edgelist)==1:
+            #print('while')
+            for edge in self.get_edges(edgelist[-1].end()):
+                if edge not in edgelist:
+                    edgelist.append(edge)
+            if len(edgelist) == self.num_edges():
+                break
+
+        return edgelist
+
     def get_edges(self, v):
         """ Return a list of all edges incident on v.
 
@@ -359,7 +375,7 @@ class Graph:
     def complete_route(self):
         #self.add_edge(self.vertices()[-1], self.vertices()[0])
         for vertex in self.vertices():
-            if self.degree(vertex) == 1:
+            if self.degree(vertex) == 1 and vertex != self.vertices()[0]:
                 self.add_edge(vertex, self.vertices()[0])
         #self.add_edge(self.edges()[-1].end(), self.edges()[0].start())
 

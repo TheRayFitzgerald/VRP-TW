@@ -31,6 +31,9 @@ def main():
     #create a list of orders
     orders = create_orders(NUMBER_OF_ORDERS)
 
+    with open('orders.pkl', 'wb') as output:
+        pickle.dump(orders, output, pickle.HIGHEST_PROTOCOL)
+
     for order in orders:
         
         time_to_delivery = (order.scheduled_time-datetime.timedelta(hours=9))
