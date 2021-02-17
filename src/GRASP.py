@@ -46,7 +46,7 @@ def is_completed_route2(route):
 
 def order_is_reachable(route, order):
     total_time = 0
-
+    print('-- Order: %i' % order.order.id)
     for edge in route.edges_in_order():
         start = edge.start()
         end = edge.end()
@@ -342,15 +342,28 @@ def cost_of_break(order, route):
     route_copy = copy.deepcopy(route)
 
     original_edges = route.get_edges(order)
+    print('Original Edges')
+    print(original_edges)
+    print('Order')
+    print(order)
 
-    v1 = original_edges[0].opposite(order)
-    v2 = original_edges[1].opposite(order)
+    if len(original_edges) > 1:
 
-    
-    d1 = route.get_distance_between_vertices(v1, order)
-    d2 = route.get_distance_between_vertices(order, v2)
+        v1 = original_edges[0].opposite(order)
+        v2 = original_edges[1].opposite(order)
 
-    d3 = route.get_distance_between_vertices(v1, v2)
+        
+        d1 = route.get_distance_between_vertices(v1, order)
+        d2 = route.get_distance_between_vertices(order, v2)
+
+        d3 = route.get_distance_between_vertices(v1, v2)
+    else:
+        v1 = original_edges[0].opposite(order)
+        d1 = route.get_distance_between_vertices(v1, order)
+        d2 = d1
+        # depot to depot
+        d3 = 0
+
   
     return d3 - (d1 + d2)
 
@@ -440,10 +453,6 @@ def local_search(routes):
 
                 local_search_actioned = True
                 try:
-                    original_edges = routes[i].get_edges(order)
-                    v1 = original_edges[0].opposite(order)
-                    v2 = original_edges[1].opposite(order)
-
                     routes[i].remove_vertex_and_repair(order)
 
                     #-------------------------------
@@ -457,10 +466,12 @@ def local_search(routes):
 
                 except Exception as e:
                     print(e)
+                    print('RAY')
                     print('ERROR')
+                    print(';h')
                     time.sleep(5)
-                    plot_routes(routes, "error")
-                    plt.show()
+                    #plot_routes(routes, "error")
+                    #plt.show()
                   
             else:
                 print('fail')
@@ -551,6 +562,126 @@ def tw_shuffle(routes):
         print('###')
     return improved_routes, failed_vertices
 
+def local_search_tw(routes):
+
+    local_search_actioned = False
+
+    for i in range(len(routes)): 
+        origin_route = routes[i]
+
+        for order in origin_route.vertices()[1:]:
+
+            other_routes = routes.copy()
+            other_routes.pop(routes.index(origin_route))
+
+            best_new_position_route = None
+            # magic
+            for j in range(len(other_routes)):
+                improved_other_route = copy.deepcopy(other_routes[j])
+                
+                for edge in improved_other_route.edges():
+
+                    start = edge.start()
+                    end = edge.end()
+  
+                    print('$$$$ START $$$$\n')
+                    print(improved_other_route)
+                    print('Distance: %f' % get_route_distance(improved_other_route))
+                
+                    print('\n----- Origin -----')
+                    print('Route: %s, Order: %i' % (colors[i], order.element().id))
+                    print('------------------')
+
+                    print('\n----- Destination -----')
+                    print('Route: %s, Order: %i <-> %i' % (colors[routes.index(other_routes[j])], start.element().id, end.element().id))
+                    print('-----------------------\n')
+
+                    improved_routes = routes.copy()
+                    improved_origin_route = copy.deepcopy(improved_routes[i])
+
+                    if origin_route.degree(order) > 2:
+                        # time.sleep(1)
+                        print('TOO MANY EDGES')
+
+                    print('$$$$ Origin Route $$$$\n')
+                    print(origin_route)
+
+                    print(improved_other_route.add_vertex_between_vertices(order, start, end))
+
+                    print('\n$$$$ CHANGES $$$$')
+                    print(improved_other_route)
+                    print('Distance: %f' % get_route_distance(improved_other_route))
+                    print('\n')
+
+                    try:
+                        # print('Best Route Distance: %f' % get_route_distance(best_new_position_route[0]))
+                        print('Best Route Distance: %f' % best_new_position_route[4])
+                        print('This Route Distance: %f' % get_route_distance(improved_other_route))
+                    except Exception as e: 
+                        print(e)
+
+
+                    # find the new position with the lowest cost
+                    try:
+                        if (best_new_position_route == None or \
+                        (get_route_distance(improved_other_route) < get_route_distance(best_new_position_route[0]) and \
+                        route_distance_difference(improved_other_route, other_routes[j]) < route_distance_difference(best_new_position_route[0], other_routes[j]))) \
+                        and route_is_feasible(improved_other_route):
+                            print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+                            print('\n2\n')
+                            print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+                            
+                            best_new_position_route = [copy.deepcopy(improved_other_route), j, start.element().uid, end.element().uid]
+                        
+                        # make reparations 
+                        improved_other_route.remove_vertex_and_repair(order)
+
+                        print(improved_other_route)
+                        print('Distance: %f' % get_route_distance(improved_other_route))
+                        print('$$$$ END $$$$\n')
+                    except Exception as e:
+                        print(e)
+                        plot_routes(routes, "error on feasibility")
+                        plt.show()
+            
+            
+            if best_new_position_route == None:
+                break
+            # check if dest route distance + cost of break in origin route is better than old dest route distance
+            if best_new_position_route != None and ((cost_of_break(order, origin_route) + get_route_distance(best_new_position_route[0])) \
+                < (get_route_distance(routes[routes.index(other_routes[best_new_position_route[1]])]))):
+
+                local_search_actioned = True
+                try:
+                    routes[i].remove_vertex_and_repair(order)
+
+                    #-------------------------------
+                    r_index = routes.index(other_routes[best_new_position_route[1]])
+                    
+                    start = routes[r_index].get_vertex_by_uid(best_new_position_route[2])
+                    end = routes[r_index].get_vertex_by_uid(best_new_position_route[3])
+                    
+                    # Add order to destination route
+                    routes[r_index].add_vertex_between_vertices(order, start, end)
+                    
+                    
+                except Exception as e:
+                    print(e)
+                    print('ERROR')
+                    time.sleep(5)
+                    plot_routes(routes, "error")
+                    plt.show()
+                  
+            else:
+                print('fail')
+                print(get_route_distance(origin_route) + cost_of_break(order, origin_route) + \
+                get_route_distance(best_new_position_route[0]))
+                print((get_route_distance(origin_route) + \
+                get_route_distance(routes[routes.index(other_routes[best_new_position_route[1]])])))
+                print(cost_of_break(order, origin_route))
+
+    return (routes, local_search_actioned)
+
 def grasp(orders, graph_results=True):
 
     L_points, L = GrahamScan(orders)
@@ -571,7 +702,8 @@ def grasp(orders, graph_results=True):
     improved_routes = two_opt_route_improve(routes)
 
     if graph_results:
-        plot_routes(improved_routes, "Two-opt improved routes")
+        pass
+        #plot_routes(improved_routes, "Two-opt improved routes")
     for i in range(1):
         tw_shuffle_routes, failed_vertices = tw_shuffle(routes)
 
@@ -580,17 +712,22 @@ def grasp(orders, graph_results=True):
         print('################')
         print('Route: %s' % colors[failed_vertices.index(failed_vertices_for_route)])
         for vertex in failed_vertices_for_route:
-            print(vertex + vertex.order.slack)
+            print(vertex)
         print('################')
 
     print('Routes are Feasible: %s' % routes_are_feasible(tw_shuffle_routes))
         
     if graph_results:
         plot_routes(tw_shuffle_routes, "TW Shuffle")
+
+    #return tw_shuffle_routes
+    for i in range(3):
+        local_search_routes_tw = local_search_tw(tw_shuffle_routes)[0]
+
+    if graph_results:
+        plot_routes(local_search_routes_tw, "Local Search w/ TW")
         plt.show()
-
-    return tw_shuffle_routes
-
+    return local_search_routes_tw
     for i in range(5):
         improved_routes = two_opt_route_improve(tw_shuffle_routes)
 

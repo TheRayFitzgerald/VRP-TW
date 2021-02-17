@@ -197,20 +197,66 @@ class Graph:
                     edgelist.append(self._structure[v][w])
         return edgelist
 
-    def edges_in_order(self):
+    def edges_in_order_0(self):
         """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
-        edgelist = [edge for edge in self.get_edges(self.vertices()[0]) if edge.start() == self.vertices()[0]]
+        #edgelist = [edge for edge in self.get_edges(self.vertices()[0]) if self.vertices()[0] is in edge.vertices()]
+        edgelist = edgelist[0]
+        edgelist.append(self.edgelist[0])
         #print(self.get_edges(self.vertices()[0])[0])
         #print(edgelist[-1])
         #time.sleep(4)
-        while (self.vertices()[0] not in edgelist[-1].vertices() and len(edgelist) != 1) or len(edgelist)==1:
-            #print('while')
-            for edge in self.get_edges(edgelist[-1].end()):
-                if edge not in edgelist:
-                    edgelist.append(edge)
-            if len(edgelist) == self.num_edges():
-                break
+        print('GRAPH')
+        print(self)
+        print('EDGE LIST')
+        print(edgelist)
+        print('DEPOT VERTEX')
+        print(self.vertices()[0])
+        if len(edgelist) == 0:
+            raise Exception('ree')
+            time.sleep(5)
+        try:
+            while (self.vertices()[0] not in edgelist[-1].vertices() and len(edgelist) != 1) or len(edgelist)==1:
+                #print('while')
+                for edge in self.get_edges(edgelist[-1].end()):
+                    if edge not in edgelist:
+                        edgelist.append(edge)
+                if len(edgelist) == self.num_edges():
+                    break
+                else:
+                    print('No')
+                print('EDGE LIST')
+                print(edgelist)
+        except Exception as e:
+            raise Exception('ex')
+            print(e)
+            rais
 
+        return edgelist
+
+    def edges_in_order(self):
+        """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
+        edgelist = [self.get_edges(self.vertices()[0])[0]]
+        for edge in self.get_edges(edgelist[-1].opposite(self.vertices()[0])):
+            if edge not in edgelist:
+                edgelist.append(edge)
+        #edgelist.append([edge for edge in self.get_edges(edgelist[-1].opposite(self.vertices()[0])) if edge not in edgelist][0])
+        print('EDGELIST BEFORE WHILE')
+        print(edgelist)
+        if len(edgelist) == 0:
+            raise Exception('ree')
+            time.sleep(5)
+        try:
+            while len(edgelist) != self.num_edges():
+                for vertex in edgelist[-1].vertices():
+                    for edge in self.get_edges(vertex):
+                        if edge not in edgelist:
+                            edgelist.append(edge)
+ 
+        except Exception as e:
+            raise Exception('ex')
+            print(e)
+        print('EDGELIST')
+        print(edgelist)
         return edgelist
 
     def get_edges(self, v):
@@ -292,23 +338,41 @@ class Graph:
 
     def add_vertex_between_vertices(self, v, w1, w2):
 
+        edgelist = [edge for edge in self.get_edges(self.vertices()[0]) if edge.start() == self.vertices()[0]]
         self.remove_edge(self.get_edge(w1, w2))
         self.add_existing_vertex(v)
-        self.add_edge(w1, v)
-        self.add_edge(v, w2)
+        if w2.order.coords == (150, 150) and len(edgelist) == 0:
+            self.add_edge(w2, v)
+            self.add_edge(v, w1)
+        else:
+            self.add_edge(w1, v)
+            self.add_edge(v, w2)
+        
 
     def remove_vertex(self, vertex):
 
         return self._structure.pop(vertex, None)
 
     def remove_vertex_and_repair(self, vertex):
+        try:
+            if self.degree(vertex) > 1:
+                w1 = self.get_edges(vertex)[0].opposite(vertex)
+                w2 = self.get_edges(vertex)[1].opposite(vertex)
+                self.remove_edge(self.get_edges(vertex)[0])
+                self.remove_edge(self.get_edges(vertex)[0])
+                self.remove_vertex(vertex)
+                self.add_edge(w1, w2)
 
-        w1 = self.get_edges(vertex)[0].opposite(vertex)
-        w2 = self.get_edges(vertex)[1].opposite(vertex)
-        self.remove_edge(self.get_edges(vertex)[0])
-        self.remove_edge(self.get_edges(vertex)[0])
-        self.remove_vertex(vertex)
-        self.add_edge(w1, w2)
+            # The order's degree is <= 1. Therefore it is the only order in the route.
+            # Therefore, we want to remove the route altogether.
+            else:
+                self.remove_edge(self.get_edges(vertex)[0])
+                self.remove_vertex(vertex)
+
+        except Exception as e:
+            print('here')
+            print(e)
+            time.sleep(5)
 
     def add_edge(self, v, w):
         """ Add and return an edge between two vertices v and w, with  element.
