@@ -235,17 +235,14 @@ class Graph:
 
     def edges_in_order(self):
         """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
+        # start by getting an edge with depot in it
         edgelist = [self.get_edges(self.vertices()[0])[0]]
+        # then add the next edge in the correct direction
         for edge in self.get_edges(edgelist[-1].opposite(self.vertices()[0])):
             if edge not in edgelist:
                 edgelist.append(edge)
-        #edgelist.append([edge for edge in self.get_edges(edgelist[-1].opposite(self.vertices()[0])) if edge not in edgelist][0])
-        print('EDGELIST BEFORE WHILE')
-        print(edgelist)
-        if len(edgelist) == 0:
-            raise Exception('ree')
-            time.sleep(5)
         try:
+            # iterate over until we get all of the edges
             while len(edgelist) != self.num_edges():
                 for vertex in edgelist[-1].vertices():
                     for edge in self.get_edges(vertex):
@@ -255,8 +252,7 @@ class Graph:
         except Exception as e:
             raise Exception('ex')
             print(e)
-        print('EDGELIST')
-        print(edgelist)
+
         return edgelist
 
     def get_edges(self, v):
@@ -436,12 +432,13 @@ class Graph:
             #print(e)
             return None
 
+    # method to find the single vertex with only 1 edge(as opposed to 2)
+    # method connects this vertex back to the origin/depot vertex.
     def complete_route(self):
-        #self.add_edge(self.vertices()[-1], self.vertices()[0])
         for vertex in self.vertices():
             if self.degree(vertex) == 1 and vertex != self.vertices()[0]:
                 self.add_edge(vertex, self.vertices()[0])
-        #self.add_edge(self.edges()[-1].end(), self.edges()[0].start())
+        
 
     def erase(self):
         self._structure = dict()

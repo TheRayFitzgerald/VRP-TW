@@ -47,7 +47,7 @@ def main():
         print('###')
         
     print(calculate_slack(orders[-1]))
-    routes = grasp(orders)
+    routes = grasp(orders, False)
     
     '''
 

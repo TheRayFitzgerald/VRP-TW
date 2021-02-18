@@ -16,7 +16,7 @@ from py2opt.routefinder import RouteFinder
 DEPOT_COORDS = (150, 150)
 START_TIME = datetime.timedelta(hours=9)
 MAX_NUMBER_OF_ROUTES = 4
-SPEED = 5
+SPEED = 3
 
 local_search_actioned = False
 colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
@@ -128,7 +128,7 @@ def get_overall_distance(routes):
 def route_initialization(L, L_comp):
 
     # sort by shortest distance from depot
-    L_comp.sort(key=lambda x: x.slack, reverse=False)
+    L_comp.sort(key=lambda x: x.slack, reverse=True)
 
     S = list()
     S.append(max(L, key=attrgetter('slack')))
@@ -227,6 +227,15 @@ def iterate_routes(routes, function):
 def main_routing(unscheduled_orders, S, routes):
 
     # find the min insertion cost and the best route
+    print('\n######\nMain Routing\n######\n')
+    for route in routes:
+
+        print('Route')
+        print(route)
+        for edge in route.edges():
+            print('EDGES')
+            print(edge)
+            time.sleep(3)
 
     while(len(unscheduled_orders) > 0):
         #print(len(unscheduled_orders))
@@ -236,6 +245,9 @@ def main_routing(unscheduled_orders, S, routes):
             min_cost_for_routes = list()
 
             for route in routes:
+                for edge in route.edges():
+                    print(edge)
+                    time.sleep(3)
                 min_cost_for_route = None
 
                 for vertex in route.vertices():
@@ -254,7 +266,8 @@ def main_routing(unscheduled_orders, S, routes):
                             min_cost_for_route = [route, get_distance_between_vertices(vertex.element().coords, order.coords)]
                 min_cost_for_routes.append(min_cost_for_route)
 
-            # best route found. now caculate the penalty using the best cost for other routess
+            # best route for given order found.
+            # now caculate the penalty using the best cost for other routes
             other_routes = routes.copy()
             other_routes.remove(route_cost_penalty[0])
             route_cost_penalty[2] = 0
@@ -402,7 +415,7 @@ def local_search(routes):
                     print('------------------')
 
                     print('\n----- Destination -----')
-                    print('Route: %s, Order: %i <-> %i' % (colors[routes.index(other_routes[j])], start.element().id, end.element().id))
+                    print('Route: %s, Order: %i <-> %i' % (colors[routes.index(other_routes[j]) % 7], start.element().id, end.element().id))
                     print('-----------------------\n')
 
                     improved_routes = routes.copy()
@@ -504,6 +517,54 @@ def two_opt_ls_iterator(routes, n_rounds):
 
     return routes
 
+def tw_shuffle_local_search_iterator(routes, n_rounds):
+
+    #with open("distances.txt", "a") as f:
+     #   f.write("%f\n" % get_overall_distance(routes))
+    timeout = time.time() + 90
+    best_distance = get_overall_distance(routes)
+    for i in range(n_rounds):
+        while get_overall_distance(routes) >= best_distance:
+            routes, failed_vertices = tw_shuffle(routes)
+            routes = local_search_tw(routes)[0]
+            
+
+            if time.time() > timeout:
+                break
+
+            #with open("distances.txt", "a") as f:
+             #   f.write("%f\n" % get_overall_distance(routes))
+
+        best_distance = get_overall_distance(routes)
+        plot_routes(routes, "Round %i" % i)
+
+    return routes
+
+def tw_shuffle_local_search_iterator_reversed(routes, n_rounds):
+
+    #with open("distances.txt", "a") as f:
+     #   f.write("%f\n" % get_overall_distance(routes))
+    timeout = time.time() + 90
+    best_distance = get_overall_distance(routes)
+    for i in range(n_rounds):
+        while get_overall_distance(routes) >= best_distance:
+            routes = local_search_tw(routes)[0]
+            routes, failed_vertices = tw_shuffle(routes)
+            
+            
+
+            if time.time() > timeout:
+                break
+
+            #with open("distances.txt", "a") as f:
+             #   f.write("%f\n" % get_overall_distance(routes))
+
+        best_distance = get_overall_distance(routes)
+        plot_routes(routes, "Round %i" % i)
+
+    return routes
+
+
 
 def tw_shuffle(routes):
 
@@ -511,7 +572,11 @@ def tw_shuffle(routes):
     improved_routes = list()
     for route in routes:
         failed_vertices_for_route = list()
+
+        # create a new improved route with abritrary ID
+        # this improved route will be used to record changes for all vertices for this given route.
         improved_route = Graph('4')
+
         shuffled_vertices = route.vertices()[1:]
         random.shuffle(shuffled_vertices)
 
@@ -521,20 +586,26 @@ def tw_shuffle(routes):
         d1 = improved_route.add_existing_vertex(shuffled_vertices.pop(0))
         # connect the first vertex to the depot
         improved_route.add_edge(d0, d1)
-    
+        
+        # randomly pick a vertex to insert
         for vertex in shuffled_vertices:
+            # create a list to record all feasible routes for this vertex.
             feasible_routes = list()
+            # iterate through all edges to find the best position for this vertex
             for edge in improved_route.edges():
                 
                 start = edge.start()
                 end = edge.end()
                 improved_route.add_vertex_between_vertices(vertex, start, end)
-            
+                
+                # check if route is feasible: all orders in route are reachable within their TW's.
                 if route_is_feasible(improved_route):
+                    # add route to list of all feasible routes for this vertex
                     feasible_routes.append(copy.deepcopy(improved_route))
-
+                # undo changes
                 improved_route.remove_vertex_and_repair(vertex)
                 
+            # all feasible routes have now been recorded
             # iterate through all feasible routes to find the cheapest
             try:
                 best_route = feasible_routes[0]
@@ -542,8 +613,10 @@ def tw_shuffle(routes):
                     if get_route_distance(route) < get_route_distance(best_route):
                         best_route = route
 
-                # make changes on the main improved route and continue
+                # make changes on the main improved route
                 improved_route = best_route
+
+            # vertex inserted into its best position - continue
 
             # no routes found for this vertex
             except Exception as e:
@@ -551,7 +624,7 @@ def tw_shuffle(routes):
                 failed_vertices_for_route.append(vertex)
                 pass
 
-        # complete the route 
+        # complete the route
         improved_route.complete_route()
         # record the finalised improved route
         improved_routes.append(improved_route)
@@ -589,11 +662,11 @@ def local_search_tw(routes):
                     print('Distance: %f' % get_route_distance(improved_other_route))
                 
                     print('\n----- Origin -----')
-                    print('Route: %s, Order: %i' % (colors[i], order.element().id))
+                    print('Route: %s, Order: %i' % (colors[i % 7], order.element().id))
                     print('------------------')
 
                     print('\n----- Destination -----')
-                    print('Route: %s, Order: %i <-> %i' % (colors[routes.index(other_routes[j])], start.element().id, end.element().id))
+                    print('Route: %s, Order: %i <-> %i' % (colors[routes.index(other_routes[j]) % 7], start.element().id, end.element().id))
                     print('-----------------------\n')
 
                     improved_routes = routes.copy()
@@ -700,10 +773,18 @@ def grasp(orders, graph_results=True):
         f.write("%f\n" % get_overall_distance(routes))
 
     improved_routes = two_opt_route_improve(routes)
-
     if graph_results:
-        pass
-        #plot_routes(improved_routes, "Two-opt improved routes")
+        # plot_routes(improved_routes, "Two-opt improved routes")
+        plot_routes(improved_routes, "Base")
+
+    routes_it = tw_shuffle_local_search_iterator(improved_routes, 3)
+    routes_it_reversed = tw_shuffle_local_search_iterator_reversed(improved_routes, 3)
+    if graph_results:
+        #plot_routes(routes_it, "TW Shuffle")
+        plt.show()
+    return routes_it
+
+    
     for i in range(1):
         tw_shuffle_routes, failed_vertices = tw_shuffle(routes)
 
@@ -715,7 +796,6 @@ def grasp(orders, graph_results=True):
             print(vertex)
         print('################')
 
-    print('Routes are Feasible: %s' % routes_are_feasible(tw_shuffle_routes))
         
     if graph_results:
         plot_routes(tw_shuffle_routes, "TW Shuffle")
@@ -727,6 +807,9 @@ def grasp(orders, graph_results=True):
     if graph_results:
         plot_routes(local_search_routes_tw, "Local Search w/ TW")
         plt.show()
+
+    print('Routes are Feasible: %s' % routes_are_feasible(tw_shuffle_routes))
+    print('Routes are Feasible: %s' % routes_are_feasible(local_search_routes_tw))
     return local_search_routes_tw
     for i in range(5):
         improved_routes = two_opt_route_improve(tw_shuffle_routes)
@@ -885,7 +968,7 @@ def plot_routes(routes, title="untitled", labeled=True):
             except AttributeError:
                 x_values = [vertices[0].element()[0], vertices[1].element()[0]]
                 y_values = [vertices[0].element()[1], vertices[1].element()[1]]
-            plt.plot(x_values, y_values, colors[i])
+            plt.plot(x_values, y_values, colors[i % 7])
               
         i += 1
 

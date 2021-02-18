@@ -3,8 +3,8 @@ import random
 from math import sqrt
 
 DEPOT_COORDS = (150, 150)
-# aribtrary speed: 20km/h
-SPEED = 20
+# aribtrary speed in km/h
+SPEED = 3
 
 class Order:
 
