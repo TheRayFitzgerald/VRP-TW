@@ -47,7 +47,7 @@ def main():
         print('###')
         
     print(calculate_slack(orders[-1]))
-    routes = grasp(orders, False)
+    routes = grasp(orders, True)
     
     '''
 
@@ -99,7 +99,7 @@ def create_orders(quantity):
         random_hour = random.uniform(1, 2.5)
         
         # orders scheduled between 10:00 -> 18:00(delivery starts at 09:00)
-        scheduled_time = datetime.timedelta(hours=randrange(10, 18), minutes=randrange(0, 59))
+        scheduled_time = datetime.timedelta(hours=randrange(10, 12), minutes=randrange(0, 59))
 
         time_to_delivery = (scheduled_time-datetime.timedelta(hours=9))
 

@@ -336,14 +336,14 @@ class Graph:
 
         edgelist = [edge for edge in self.get_edges(self.vertices()[0]) if edge.start() == self.vertices()[0]]
         self.remove_edge(self.get_edge(w1, w2))
-        self.add_existing_vertex(v)
+        vertex = self.add_existing_vertex(v)
         if w2.order.coords == (150, 150) and len(edgelist) == 0:
             self.add_edge(w2, v)
             self.add_edge(v, w1)
         else:
             self.add_edge(w1, v)
             self.add_edge(v, w2)
-        
+        return vertex
 
     def remove_vertex(self, vertex):
 
