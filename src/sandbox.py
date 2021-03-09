@@ -13,6 +13,10 @@ b = Order(2, 'ray', (3, 4), datetime.timedelta(seconds=5), 3)
 c = a.scheduled_time - b.scheduled_time
 print(c.seconds)
 
+inf = float('inf')
+print(inf)
+print(inf + 1)
+print((inf + 1) >= inf)
 '''
 graph = Graph('a')
 a = graph.add_vertex('a')
@@ -40,4 +44,5 @@ print(graph.get_edges(b))
 for j in range(3,4):
 	print(j)
 '''
+
 

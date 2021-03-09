@@ -7,7 +7,7 @@ from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
 from GRASP import grasp, calculate_slack, order_is_reachable, routes_are_feasible, tw_shuffle
 import matplotlib.pyplot as plt
-import random, pickle, datetime, time
+import random, pickle, datetime, time, os, sys
 import numpy as np
 
 all_couriers = list()
@@ -15,7 +15,7 @@ all_orders = list()
 all_users = list()
 all_vans = list()
 
-NUMBER_OF_ORDERS = 40
+NUMBER_OF_ORDERS = 20
 
 def main():
     #create a new van and courier
@@ -48,6 +48,40 @@ def main():
         
     print(calculate_slack(orders[-1]))
     routes = grasp(orders, True)
+    if not routes:
+        a = input("Main Routing Fail. Would you like to save these Orders? [y/n]: ")
+        if a == 'y':
+            i = 0
+            while os.path.exists("../saved_orders/orders_%s.pkl" % i):
+                i += 1
+            with open("../saved_orders/orders_%s.pkl" % i, 'wb') as output:
+                pickle.dump(orders, output, pickle.HIGHEST_PROTOCOL)
+                print('Saved')
+        else:
+            print('Exiting')
+    
+    else:
+        a = input("Would you like to save these Routes and Orders? [y/n]: ")
+        if a == 'y':
+            i = 0
+            while os.path.exists("../saved_routes/routes_%s.pkl" % i):
+                i += 1
+            filename = "../saved_routes/routes_%s.pkl" % i
+            with open(filename, 'wb') as output:
+                pickle.dump(routes, output, pickle.HIGHEST_PROTOCOL)
+                print('Saved routes to %s' % filename)
+
+            i = 0
+            while os.path.exists("../saved_orders/orders_%s.pkl" % i):
+                i += 1
+            filename = "../saved_orders/orders_%s.pkl" % i
+            with open(filename, 'wb') as output:
+                pickle.dump(orders, output, pickle.HIGHEST_PROTOCOL)
+                print('Saved orders to %s' % filename)
+
+            
+        else:
+            print('Exiting')
     
     '''
 
@@ -69,13 +103,7 @@ def main():
     print('$$$')
     print(routes_are_feasible(routes))
     
-    a = input("Would you like to save these Routes? [y/n]: ")
-    if a == 'y':
-        with open('routes_4.pkl', 'wb') as output:
-            pickle.dump(routes, output, pickle.HIGHEST_PROTOCOL)
-            print('Saved')
-    else:
-        print('Exiting')
+    
     
     '''
         
@@ -90,16 +118,45 @@ def main():
         print(order[0])
     '''
 
+def main2():
+   
+    with open('../saved_orders/orders_10.pkl', 'rb') as input:
+        orders = pickle.load(input)
 
+    routes = grasp(orders, True)
+    if not routes:
+        a = input("Main Routing Fail. Would you like to save these Orders? [y/n]: ")
+        if a == 'y':
+            i = 0
+            while os.path.exists("../saved_orders/orders_%s.pkl" % i):
+                i += 1
+            with open("../saved_orders/orders_%s.pkl" % i, 'wb') as output:
+                pickle.dump(orders, output, pickle.HIGHEST_PROTOCOL)
+                print('Saved')
+        else:
+            print('Exiting')
+    
+    else:
+        a = input("Would you like to save these Routes? [y/n]: ")
+        if a == 'y':
+            i = 0
+            while os.path.exists("../saved_routes/routes_%s.pkl" % i):
+                i += 1
+            filename = "../saved_routes/routes_%s.pkl" % i
+            with open(filename, 'wb') as output:
+                pickle.dump(routes, output, pickle.HIGHEST_PROTOCOL)
+                print('Saved to %s' % filename)
+        else:
+            print('Exiting')
 
 def create_orders(quantity):
     orders = list()
-    for i in range (quantity):
+    for i in range (1, quantity+1):
 
         random_hour = random.uniform(1, 2.5)
         
         # orders scheduled between 10:00 -> 18:00(delivery starts at 09:00)
-        scheduled_time = datetime.timedelta(hours=randrange(10, 12), minutes=randrange(0, 59))
+        scheduled_time = datetime.timedelta(hours=randrange(10, 18), minutes=randrange(0, 59))
 
         time_to_delivery = (scheduled_time-datetime.timedelta(hours=9))
 
@@ -115,5 +172,7 @@ def create_orders(quantity):
 
 if __name__ == '__main__':
 
-    for i in range(1):
-        main()
+    #sys.stdout = open(os.devnull, 'w')
+    main2()
+
+

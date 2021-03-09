@@ -31,6 +31,9 @@ class Vertex:
         """
         return self._element < v.element()
 
+    def __repr__(self):
+        return str(self)
+
     def element(self):
         """ Return the data for the vertex. """
         return self._element
@@ -70,6 +73,9 @@ class Edge:
         return ('(' + str(self._vertices[0]) + '--'
                 + str(self._vertices[1]) + ' : '
                 + str(self._element) + ')')
+
+    def __repr__(self):
+        return str(self)
 
     def vertices(self):
         """ Return an ordered pair of the vertices of this edge. """
@@ -131,6 +137,9 @@ class Graph:
         for e in edges:
             estr += str(e) + ' '
         return hstr + vstr + estr
+
+    def __repr__(self):
+        return '\n' + str(self) + '\n'
 
     # -----------------------------------------------------------------------#
     @property
@@ -197,44 +206,9 @@ class Graph:
                     edgelist.append(self._structure[v][w])
         return edgelist
 
-    def edges_in_order_0(self):
-        """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
-        #edgelist = [edge for edge in self.get_edges(self.vertices()[0]) if self.vertices()[0] is in edge.vertices()]
-        edgelist = edgelist[0]
-        edgelist.append(self.edgelist[0])
-        #print(self.get_edges(self.vertices()[0])[0])
-        #print(edgelist[-1])
-        #time.sleep(4)
-        print('GRAPH')
-        print(self)
-        print('EDGE LIST')
-        print(edgelist)
-        print('DEPOT VERTEX')
-        print(self.vertices()[0])
-        if len(edgelist) == 0:
-            raise Exception('ree')
-            time.sleep(5)
-        try:
-            while (self.vertices()[0] not in edgelist[-1].vertices() and len(edgelist) != 1) or len(edgelist)==1:
-                #print('while')
-                for edge in self.get_edges(edgelist[-1].end()):
-                    if edge not in edgelist:
-                        edgelist.append(edge)
-                if len(edgelist) == self.num_edges():
-                    break
-                else:
-                    print('No')
-                print('EDGE LIST')
-                print(edgelist)
-        except Exception as e:
-            raise Exception('ex')
-            print(e)
-            rais
-
-        return edgelist
-
     def edges_in_order(self):
         """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
+        
         # start by getting an edge with depot in it
         edgelist = [self.get_edges(self.vertices()[0])[0]]
         # then add the next edge in the correct direction
