@@ -1,11 +1,10 @@
-from Van import Van
-from Courier import Courier
 from Order import Order
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
 from Graph import Graph, Vertex
+from Config import Config
 import matplotlib.pyplot as plt
 import random, operator, time, copy, pickle, datetime, math, sys
 import numpy as np
@@ -18,8 +17,8 @@ DEPOT_COORDS = (150, 150)
 START_TIME = datetime.timedelta(hours=9)
 MAX_NUMBER_OF_ROUTES = 6
 SPEED = 9
-NUMBER_OF_ORDERS = 20
-CONVERGENCE_COUNTER = 5
+NUMBER_OF_ORDERS = Config.NUMBER_OF_ORDERS
+CONVERGENCE_COUNTER = 3
 
 local_search_actioned = False
 colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
@@ -531,7 +530,7 @@ def local_search_tw_shuffle_iterator(routes):
             f.write("LS\n%i\n" % num_vertices)
             f.write("%i\n" % get_overall_distance(routes))
 
-        if num_vertices < NUMBER_OF_ORDERS:
+        if num_vertices != NUMBER_OF_ORDERS:
             print('Local Search has lost vertices')
             time.sleep(3)
             return routes
@@ -542,7 +541,7 @@ def local_search_tw_shuffle_iterator(routes):
 
         # TW Shuffle        
         routes, failed_vertices = tw_shuffle(routes)
-
+        num_vertices = 0
         for route in routes:
             num_vertices += route.num_vertices() - 1
 
@@ -552,7 +551,7 @@ def local_search_tw_shuffle_iterator(routes):
             f.write(str(failed_vertices) + "\n")
             f.write("Convergence Counter: " + str(convergence_counter) + "\n")
 
-        if num_vertices < NUMBER_OF_ORDERS:
+        if num_vertices != NUMBER_OF_ORDERS:
             print('TW Shuffle has lost vertices')
             print(num_vertices)
             print(failed_vertices)
@@ -572,6 +571,100 @@ def local_search_tw_shuffle_iterator(routes):
 
         if convergence_counter >= CONVERGENCE_COUNTER:
             break
+
+    best_distance = get_overall_distance(routes)
+
+    return routes
+
+
+def local_search_tw_shuffle_iterator2(routes):
+
+    open('num_vertices.txt', 'w').close()
+    num_vertices = 0
+    for route in routes:
+        num_vertices += route.num_vertices() - 1
+    with open("num_vertices.txt", "a") as f:
+        f.write("Initial: %i\n" % num_vertices)
+        f.write("Initial: %i\n" % get_overall_distance(routes))
+
+    timeout = time.time() + 100
+    best_distance = get_overall_distance(routes)
+    convergence_counter = 0
+    while True:
+        # Local Search
+        routes = local_search_tw(routes)[0]
+
+        plot_routes(routes, "Local Search w/ TW")
+        num_vertices = 0
+        for route in routes:
+            num_vertices += route.num_vertices() - 1
+
+        with open("num_vertices.txt", "a") as f:
+            f.write("LS\n%i\n" % num_vertices)
+            f.write("%i\n" % get_overall_distance(routes))
+
+        if num_vertices != NUMBER_OF_ORDERS:
+            print('Local Search has lost vertices')
+            time.sleep(3)
+            return routes
+        if not routes_are_feasible(routes):
+            print('Local Search has caused infeasibility')
+            time.sleep(3)
+            return routes
+
+        if get_overall_distance(routes) == best_distance:
+            convergence_counter += 1
+        elif get_overall_distance(routes) < best_distance:
+            best_distance = get_overall_distance(routes)
+            convergence_counter = 0
+
+        if convergence_counter >= CONVERGENCE_COUNTER:
+            break
+
+    with open("num_vertices.txt", "a") as f:
+            f.write("\n\n######################\n\n")
+
+
+    timeout = time.time() + 100
+    best_distance = get_overall_distance(routes)
+    convergence_counter = 0
+    while True:
+
+        # TW Shuffle        
+        routes, failed_vertices = tw_shuffle(routes)
+        num_vertices = 0
+        for route in routes:
+            num_vertices += route.num_vertices() - 1
+
+        with open("num_vertices.txt", "a") as f:
+            f.write("Shuffle\n%i\n" % num_vertices)
+            f.write("%i\n" % get_overall_distance(routes))
+            f.write(str(failed_vertices) + "\n")
+            f.write("Convergence Counter: " + str(convergence_counter) + "\n")
+
+        if num_vertices != NUMBER_OF_ORDERS:
+            print('TW Shuffle has lost vertices')
+            print(num_vertices)
+            print(failed_vertices)
+            time.sleep(3)
+            return routes
+
+        if not routes_are_feasible(routes):
+            print('TW Shuffle has caused infeasibility')
+            time.sleep(3)
+            return routes
+
+        if get_overall_distance(routes) == best_distance:
+            convergence_counter += 1
+        elif get_overall_distance(routes) < best_distance:
+            best_distance = get_overall_distance(routes)
+            convergence_counter = 0
+
+        if convergence_counter >= CONVERGENCE_COUNTER:
+            break
+
+        
+        
 
     best_distance = get_overall_distance(routes)
 
@@ -820,32 +913,9 @@ def local_search_tw(routes):
                         route_distance_difference(improved_other_route, other_routes[j]) < route_distance_difference(best_new_position_route[0], other_routes[best_new_position_route[1]])):
                             
                             best_new_position_route = [copy.deepcopy(improved_other_route), j, start.element().uid, end.element().uid]
-                        if not routes_are_feasible(shuffled_routes):
-                            sys.exit('\n3\n')
-
-                        if order.order.id == 5 and (start.order.id == 0 and end.order.id==13):
-                            print('\nCHECK\n')
-                            print(get_route_distance(improved_other_route) < get_route_distance(best_new_position_route[0]))
-                            print(best_new_position_route == None)
-                            print(route_distance_difference(improved_other_route, other_routes[j]) < route_distance_difference(best_new_position_route[0], other_routes[j]))
-                            print(route_distance_difference(improved_other_route, other_routes[j]))
-                            print(route_distance_difference(best_new_position_route[0], other_routes[best_new_position_route[1]]))
-                            print(improved_other_route == best_new_position_route[0])
-                            print('#####')
-                            #print(best_new_position_route[0].get_vertex_by_uid(best_new_position_route[2]))
-                            #print(best_new_position_route[0].get_vertex_by_uid(best_new_position_route[3]))
-                            #print('Best Route Distance: %f' % best_new_position_route[4])
-                            print(improved_other_route)
-                            print(route_is_feasible(improved_other_route))
-                            print('This Route Distance: %f' % get_route_distance(improved_other_route))
-                            #time.sleep(20)
-
                         
-
                         # make reparations 
                         improved_other_route.remove_vertex_and_repair(order)
-                        if not routes_are_feasible(shuffled_routes):
-                            sys.exit('\n4\n')
                         #print(improved_other_route)
                         #print('Distance: %f' % get_route_distance(improved_other_route))
                         #print('$$$$ END $$$$\n')
@@ -856,8 +926,6 @@ def local_search_tw(routes):
                         plt.show()
 
 
-
-            
             if not routes_are_feasible(shuffled_routes):
                         sys.exit('\n5\n')
                         pass
@@ -914,206 +982,24 @@ def grasp(orders, graph_results=True):
     L_comp = list(set(orders) - set(L))
     #plot_convex_hull(orders, L_points, '.r')
     S, L, L_comp, routes = route_initialization(L, L_comp)
-    unscheduled_orders = L + L_comp
-    print('-- Initial --')
-    print('NUM VERTICES')
-    #print(num_vertices)
-    print('FEASIBLE')
-    print(routes_are_feasible(routes))
-    
+    unscheduled_orders = L + L_comp    
 
-    #plot_convex_hull(S, L_points, 'bo')
-    #plot_convex_hull(routes.vertices(), L_points, 'bo')
+    routes = main_routing(unscheduled_orders, S, routes)
 
-    routes_copy = copy.deepcopy(routes)
-    routes = main_routing(unscheduled_orders, S, routes_copy)
-    print('FEASIBLE')
-    print(routes_are_feasible(routes))
-    #plot_routes(routes, "main routing 1")
-    #plt.show()
-    
-    #routes_2 = main_routing_0(unscheduled_orders, S, routes)
-    '''
-    num_vertices=0
-    for route in routes:
-        num_vertices += route.num_vertices() - 1
-    print('NUM VERTICES')
-    print(num_vertices)
-    print('FEASIBLE')
-    print(routes_are_feasible(routes))
-    '''
     if not routes_are_feasible(routes):
-        time.sleep(2)
-        return False
-    print(routes)
+        sys.exit('infeasible routes')
+        
     if graph_results:
-        # plot_routes(improved_routes, "Two-opt improved routes")
         plot_routes(routes, "main routing 1")
-        #plot_routes(routes_2, "main routing 2")
-        #plt.show()
-
-
-    #return routes
-
-    #routes_it = tw_shuffle_local_search_iterator(improved_routes, 3)
-    #routes = local_search_tw_shuffle_iterator(routes, 7)
-    routes = local_search_tw_shuffle_iterator(routes)
-    print(routes)
-    time.sleep(10)
-    num_vertices=0
-    for route in routes:
-        pass
-        #num_vertices += route.num_vertices() - 1
-    print('NUM VERTICES')
-    print(num_vertices)
-    print('FAILED VERTICES')
-    #print(failed_vertices)
-    print('FEASIBLE')
-    print(routes_are_feasible(routes))
+   
+    routes = local_search_tw_shuffle_iterator2(routes)
 
     if graph_results:
         plot_routes(routes, "Iterator")
         plt.show()
     return routes
+   
 
-    
-    for i in range(1):
-        tw_shuffle_routes, failed_vertices = tw_shuffle(routes)
-
-
-    for failed_vertices_for_route in failed_vertices:
-        print('################')
-        print('Route: %s' % colors[failed_vertices.index(failed_vertices_for_route)])
-        for vertex in failed_vertices_for_route:
-            print(vertex)
-        print('################')
-
-        
-    if graph_results:
-        plot_routes(tw_shuffle_routes, "TW Shuffle")
-
-    #return tw_shuffle_routes
-    for i in range(3):
-        local_search_routes_tw = local_search_tw(tw_shuffle_routes)[0]
-
-    if graph_results:
-        plot_routes(local_search_routes_tw, "Local Search w/ TW")
-        plt.show()
-
-    print('Routes are Feasible: %s' % routes_are_feasible(tw_shuffle_routes))
-    print('Routes are Feasible: %s' % routes_are_feasible(local_search_routes_tw))
-    return local_search_routes_tw
-    for i in range(5):
-        improved_routes = two_opt_route_improve(tw_shuffle_routes)
-
-    plot_routes(improved_routes, "2")
-    plt.show()
-
-
-    L_points, L = GrahamScan(orders)
-    L_comp = list(set(orders) - set(L))
-    #plot_convex_hull(orders, L_points, '.r')
-    S, L, L_comp, routes = route_initialization(L, L_comp)
-    unscheduled_orders = L + L_comp
-    
-    #plot_convex_hull(S, L_points, 'bo')
-    #plot_convex_hull(routes.vertices(), L_points, 'bo')
-
-
-    routes = main_routing(unscheduled_orders, S, routes)
-
-    with open("distances.txt", "a") as f:
-        f.write("%f\n" % get_overall_distance(routes))
-
-    improved_routes = two_opt_route_improve(routes)
-    #return improved_routes
-    if graph_results:
-        plot_routes(improved_routes, "2")
-
-
-    
-
-    with open('routes.pkl', 'wb') as output:
-        pickle.dump(improved_routes, output, pickle.HIGHEST_PROTOCOL)
-        pickle.dump(orders, output, pickle.HIGHEST_PROTOCOL)
-    # plot_routes(improved_routes, "2-opt improved routes ## check")
-
-    
-
-    #with open("distances.txt", "a") as f:
-     #   f.write("%f\n" % get_overall_distance(improved_routes))
-    local_search_routes = improved_routes
-    for i in range(3):
-        local_search_routes = local_search(local_search_routes)[0]
-
-    #local_search_routes, local_search_actioned = local_search(improved_routes.copy())
-    if graph_results:
-        plot_routes(local_search_routes, "Local Search")
-        plt.show()
-
-
-    for i in range(3):
-        local_search_routes = two_opt_route_improve(local_search_routes)
-    return local_search_routes
-    #local_search_routes, local_search_actioned = local_search(improved_routes.copy())
-    if graph_results:
-        plot_routes(local_search_routes, "Two opt improve Search")
-        plt.show()
-    
-
-    final_routes = two_opt_ls_iterator(local_search_routes, 1)
-    with open("distances.txt", "a") as f:
-        f.write("%f\n" % get_overall_distance(final_routes))
-    if graph_results:
-        plot_routes(final_routes, "Multiple Local Searches")
-        plt.show()
-
-    return final_routes
-    '''
-    with open("distances.txt", "a") as f:
-        f.write("%f\n" % get_overall_distance(local_search_routes))
-    
-
-    print('\n\n')
-    print(get_overall_distance(local_search_routes))
-    print('\n\n')
-    '''
-    '''
-    for route in improved_routes:
-        print('\n##### NEW ROUTE######')
-        for order in route.vertices():
-            if len(route.get_edges(order)) != 2:
-                print('BAD %i' % route.degree(order))
-            elif len(route.get_edges(order)) == 2:
-                print('!!! GOOD !!!')
-            else:
-                print(route.degree(order))
-    '''
-    '''
-    
-    # local_search_routes = local_search(improved_routes.copy())
-    print(local_search_routes == improved_routes)
-    # plot_routes(orders, routes, "initial greedy routes")
-    final_routes = two_opt_ls_iterator(local_search_routes, 3)
-    plot_routes(orders, final_routes, "2nd round two-opt improve")
-
-    if local_search_actioned and 7 == 6:
-        plot_routes(orders, local_search_routes, "local-search improved routes")
-
-        final_routes = two_opt_ls_iterator(local_search_routes, 5)
-        plot_routes(orders, final_routes, "2nd round two-opt improve")
-
-        print('\n\n')
-        print(get_overall_distance(final_routes))
-        print('\n\n')
-        with open("distances.txt", "a") as f:
-            f.write("%f" % get_overall_distance(final_routes))
-
-    with open("distances.txt", "a") as f:
-            f.write("\n\n######\n\n")
-
-    '''
-    
 def set_id_by_position(routes):
     for route in routes:
         for pos, order in enumerate(route.vertices()):
@@ -1225,13 +1111,13 @@ def calculate_time_ratingt(time_val):
 
 if __name__ == '__main__':
 
-    with open('../saved_routes/routes_12.pkl', 'rb') as input:
+    with open('../saved_routes/routes_13.pkl', 'rb') as input:
         routes_original = pickle.load(input)
     routes_original = [route for route in routes_original if route.num_edges() > 0]
 
     plot_routes(routes_original, "Base")
 
-    #plt.show()
+    plt.show()
     original_num_vertices=0
 
     for route in routes_original:

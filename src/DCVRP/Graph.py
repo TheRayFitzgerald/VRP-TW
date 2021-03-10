@@ -324,13 +324,18 @@ class Graph:
         return self._structure.pop(vertex, None)
 
     def remove_vertex_and_repair(self, vertex):
+
         try:
-            if self.degree(vertex) > 1:
+            if self.degree(vertex) > 1:                
                 w1 = self.get_edges(vertex)[0].opposite(vertex)
                 w2 = self.get_edges(vertex)[1].opposite(vertex)
+
+                # remove surroundin edges and the vertex itself
                 self.remove_edge(self.get_edges(vertex)[0])
                 self.remove_edge(self.get_edges(vertex)[0])
                 self.remove_vertex(vertex)
+
+                # make reparations
                 self.add_edge(w1, w2)
 
             # The order's degree is <= 1. Therefore it is the only order in the route.

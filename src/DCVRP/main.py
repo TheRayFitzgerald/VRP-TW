@@ -1,9 +1,9 @@
-from VRPTW import Order
+from Order import Order
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
-from VRPTW.grahamscan import GrahamScan
-from VRPTW, GRASP import grasp,
+from grahamscan import GrahamScan
+from GRASP import grasp, calculate_slack, order_is_reachable, routes_are_feasible, tw_shuffle
 from Config import Config
 import matplotlib.pyplot as plt
 import random, pickle, datetime, time, os, sys

@@ -1,0 +1,47 @@
+Initial: 20
+Initial: 2086
+LS
+20
+1946
+LS
+20
+1815
+LS
+20
+1668
+LS
+20
+1623
+LS
+20
+1623
+LS
+20
+1623
+LS
+20
+1623
+
+
+######################
+
+Shuffle
+20
+1621
+[]
+Convergence Counter: 0
+Shuffle
+20
+1621
+[]
+Convergence Counter: 0
+Shuffle
+20
+1621
+[]
+Convergence Counter: 1
+Shuffle
+20
+1621
+[]
+Convergence Counter: 2
