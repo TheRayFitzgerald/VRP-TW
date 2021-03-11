@@ -1,24 +1,28 @@
-from Order import Order
+from VRPTW.Order import Order
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
-from grahamscan import GrahamScan
-from Graph import Graph, Vertex
-from Config import Config
+from VRPTW.grahamscan import GrahamScan
+from VRPTW.Graph import Graph, Vertex
+from VRPTW.read_config import read_config
 import matplotlib.pyplot as plt
 import random, operator, time, copy, pickle, datetime, math, sys
 import numpy as np
 from collections import Counter
 
 #from py2opt.routefinder import RouteFinder
-from routefinder.py2opt.py2opt.routefinder import RouteFinder
+from VRPTW.routefinder.py2opt.py2opt.routefinder import RouteFinder
 
 DEPOT_COORDS = (150, 150)
 START_TIME = datetime.timedelta(hours=9)
-MAX_NUMBER_OF_ROUTES = 6
-SPEED = 9
-NUMBER_OF_ORDERS = Config.NUMBER_OF_ORDERS
-CONVERGENCE_COUNTER = 3
+#MAX_NUMBER_OF_ROUTES = 6
+#SPEED = 9
+#NUMBER_OF_ORDERS = Config.NUMBER_OF_ORDERS
+#CONVERGENCE_COUNTER = 3
+
+config_vars = read_config()
+for key,val in config_vars.items():
+    exec(key + '=val')
 
 local_search_actioned = False
 colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
@@ -504,7 +508,7 @@ def two_opt_ls_iterator(routes, n_rounds):
 
 
 
-def local_search_tw_shuffle_iterator(routes):
+def local_search_tw_shuffle_iterator(routes, graph_results=True):
 
     open('num_vertices.txt', 'w').close()
     num_vertices = 0
@@ -520,8 +524,8 @@ def local_search_tw_shuffle_iterator(routes):
     while True:
         # Local Search
         routes = local_search_tw(routes)[0]
-
-        plot_routes(routes, "Local Search w/ TW")
+        if graph_results:
+            plot_routes(routes, "Local Search w/ TW")
         num_vertices = 0
         for route in routes:
             num_vertices += route.num_vertices() - 1
@@ -992,7 +996,7 @@ def grasp(orders, graph_results=True):
     if graph_results:
         plot_routes(routes, "main routing 1")
    
-    routes = local_search_tw_shuffle_iterator2(routes)
+    routes = local_search_tw_shuffle_iterator(routes, graph_results)
 
     if graph_results:
         plot_routes(routes, "Iterator")

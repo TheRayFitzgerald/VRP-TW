@@ -1,10 +1,10 @@
-from VRPTW import Order
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
 from VRPTW.grahamscan import GrahamScan
-from VRPTW, GRASP import grasp,
-from Config import Config
+from DCVRP.GRASP import grasp as grasp_DCVRP
+from VRPTW.GRASP import grasp as grasp_VRPTW, Order, plot_routes, routes_are_feasible, get_overall_distance
+from read_config import read_config
 import matplotlib.pyplot as plt
 import random, pickle, datetime, time, os, sys
 import numpy as np
@@ -14,28 +14,33 @@ all_orders = list()
 all_users = list()
 all_vans = list()
 
-NUMBER_OF_ORDERS = Config.NUMBER_OF_ORDERS
+config_vars = read_config()
+for key,val in config_vars.items():
+    exec(key + '=val')
 
 def main():
 
     #create a list of orders
     orders = create_orders(NUMBER_OF_ORDERS)
 
+    routes_DCVRP = grasp_VRPTW(orders, False)
+    routes_VRPTW = grasp_DCVRP(orders, False)
+    plot_routes(routes_DCVRP, "DCVRP 1")
+    plot_routes(routes_DCVRP, "DCVRP 2")
+    plot_routes(routes_VRPTW, "VRPTW 1")
+    plot_routes(routes_VRPTW, "VRPTW 2")
 
-    for order in orders:
-        
-        time_to_delivery = (order.scheduled_time-datetime.timedelta(hours=9))
+    print(routes_are_feasible(routes_DCVRP))
+    print(get_overall_distance(routes_DCVRP))
+    print(routes_are_feasible(routes_VRPTW))
+    print(get_overall_distance(routes_VRPTW))
 
-        print('###')
-        print(order.scheduled_time)
-        # print(time_to_delivery.total_seconds())
-        print(order.distance)
-        print(order.slack)
-        print(order.scheduled_time.seconds)
-        print('###')
-        
-    print(calculate_slack(orders[-1]))
-    routes = grasp(orders, True)
+    plt.show()
+
+
+    return routes_are_feasible(routes_DCVRP)
+
+    
     if not routes:
         a = input("Main Routing Fail. Would you like to save these Orders? [y/n]: ")
         if a == 'y':
@@ -144,7 +149,7 @@ def create_orders(quantity):
         random_hour = random.uniform(1, 2.5)
         
         # orders scheduled between 10:00 -> 18:00(delivery starts at 09:00)
-        scheduled_time = datetime.timedelta(hours=randrange(10, 18), minutes=randrange(0, 59))
+        scheduled_time = datetime.timedelta(hours=randrange(10, 16), minutes=randrange(0, 59))
 
         time_to_delivery = (scheduled_time-datetime.timedelta(hours=9))
 
@@ -161,6 +166,11 @@ def create_orders(quantity):
 if __name__ == '__main__':
 
     #sys.stdout = open(os.devnull, 'w')
+    '''
+    while True:
+        if not main():
+            plt.show()
+            break
+    '''
     main()
-
 

@@ -1,0 +1,10 @@
+Initial: 30
+Initial: 2287
+LS
+30
+2197
+Shuffle
+30
+2140
+[]
+Convergence Counter: 0

@@ -1,47 +1,146 @@
 Initial: 20
-Initial: 2086
+Initial: 1699
 LS
 20
-1946
-LS
-20
-1815
-LS
-20
-1668
-LS
-20
-1623
-LS
-20
-1623
-LS
-20
-1623
-LS
-20
-1623
-
-
-######################
-
+1529
 Shuffle
 20
-1621
+1691
 []
 Convergence Counter: 0
+LS
+20
+1691
 Shuffle
 20
-1621
+1684
 []
 Convergence Counter: 0
+LS
+20
+1684
 Shuffle
 20
-1621
+1684
+[]
+Convergence Counter: 0
+LS
+20
+1684
+Shuffle
+20
+1684
+[]
+Convergence Counter: 0
+LS
+20
+1684
+Shuffle
+20
+1677
 []
 Convergence Counter: 1
+LS
+20
+1677
 Shuffle
 20
-1621
+1677
+[]
+Convergence Counter: 0
+LS
+20
+1677
+Shuffle
+20
+1677
+[]
+Convergence Counter: 1
+LS
+20
+1677
+Shuffle
+20
+1669
+[]
+Convergence Counter: 2
+LS
+20
+1669
+Shuffle
+20
+1669
+[]
+Convergence Counter: 0
+LS
+20
+1669
+Shuffle
+20
+1669
+[]
+Convergence Counter: 0
+LS
+20
+1669
+Shuffle
+20
+1669
+[]
+Convergence Counter: 0
+LS
+20
+1669
+Shuffle
+20
+1669
+[]
+Convergence Counter: 0
+LS
+20
+1669
+Shuffle
+20
+1669
+[]
+Convergence Counter: 0
+LS
+20
+1669
+Shuffle
+20
+1669
+[]
+Convergence Counter: 0
+LS
+20
+1669
+Shuffle
+20
+1669
+[]
+Convergence Counter: 0
+LS
+20
+1669
+Shuffle
+20
+1669
+[]
+Convergence Counter: 1
+LS
+20
+1669
+Shuffle
+20
+1669
+[]
+Convergence Counter: 2
+LS
+20
+1669
+Shuffle
+20
+1669
 []
 Convergence Counter: 2
