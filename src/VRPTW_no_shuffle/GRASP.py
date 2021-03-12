@@ -836,41 +836,39 @@ def local_search_tw(routes):
 
     local_search_actioned = False
 
-    shuffled_routes = routes
-    random.shuffle(shuffled_routes)
 
-    if not routes_are_feasible(shuffled_routes):
+    if not routes_are_feasible(routes):
         sys.exit('\nBad from shuffle\n')
 
-    for i, origin_route in enumerate(shuffled_routes): 
+    for i, origin_route in enumerate(routes): 
         
         shuffled_vertices = origin_route.vertices()[1:]
         random.shuffle(shuffled_vertices)
 
-        if not routes_are_feasible(shuffled_routes):
+        if not routes_are_feasible(routes):
             sys.exit('\n1\n')
         for order in shuffled_vertices:
-            if not routes_are_feasible(shuffled_routes):
+            if not routes_are_feasible(routes):
                 print(shuffled_vertices)
                 print(order)
                 print('\ns\n')
-                return (shuffled_routes, local_search_actioned)
+                return (routes, local_search_actioned)
                 sys.exit('\ns\n')
                 
-            other_routes = shuffled_routes.copy()
-            if not routes_are_feasible(shuffled_routes):
+            other_routes = routes.copy()
+            if not routes_are_feasible(routes):
                 sys.exit('\nt\n')
-            other_routes.pop(shuffled_routes.index(origin_route))
-            if not routes_are_feasible(shuffled_routes):
+            other_routes.pop(routes.index(origin_route))
+            if not routes_are_feasible(routes):
                 sys.exit('\nz\n')
-            if not routes_are_feasible(shuffled_routes):
+            if not routes_are_feasible(routes):
                 sys.exit('\n?\n')
             best_new_position_route = None
             # iterate through all the routes except for the origin route.
             for j in range(len(other_routes)):
                 # improved_other_route is the destination route being considered.
                 improved_other_route = copy.deepcopy(other_routes[j])
-                if not routes_are_feasible(shuffled_routes):
+                if not routes_are_feasible(routes):
                     sys.exit('\n*\n')
                 # find best location for all edges in destination route
                 for edge in improved_other_route.edges():
@@ -889,12 +887,12 @@ def local_search_tw(routes):
                     print('------------------')
 
                     print('\n----- Destination -----')
-                    print('Route: %s, Order: %i <-> %i' % (colors[shuffled_routes.index(other_routes[j]) % 7], start.element().id, end.element().id))
+                    print('Route: %s, Order: %i <-> %i' % (colors[routes.index(other_routes[j]) % 7], start.element().id, end.element().id))
                     print('-----------------------\n')
                     
-                    if not routes_are_feasible(shuffled_routes):
+                    if not routes_are_feasible(routes):
                         sys.exit('\n2\n')
-                    improved_routes = shuffled_routes.copy()
+                    improved_routes = routes.copy()
                     improved_origin_route = copy.deepcopy(improved_routes[i])
 
                     if origin_route.degree(order) > 2:
@@ -906,7 +904,7 @@ def local_search_tw(routes):
 
                     # add the vertex to the destination route between the edge vertices being considered
                     improved_other_route.add_vertex_between_vertices(order, start, end)
-                    if not routes_are_feasible(shuffled_routes):
+                    if not routes_are_feasible(routes):
                         sys.exit('\n2.5\n')
 
                     '''
@@ -942,33 +940,33 @@ def local_search_tw(routes):
                         plt.show()
 
 
-            if not routes_are_feasible(shuffled_routes):
+            if not routes_are_feasible(routes):
                         sys.exit('\n5\n')
                         pass
             if best_new_position_route == None:
                 break
             # check if dest route distance + cost of break in origin route is better than old dest route distance
             if best_new_position_route != None and route_is_feasible(best_new_position_route[0]) and route_is_feasible(origin_route) and ((cost_of_break(order, origin_route) + get_route_distance(best_new_position_route[0])) \
-                < (get_route_distance(shuffled_routes[shuffled_routes.index(other_routes[best_new_position_route[1]])]))):
+                < (get_route_distance(routes[routes.index(other_routes[best_new_position_route[1]])]))):
 
                 local_search_actioned = True
                 try:
-                    if not routes_are_feasible(shuffled_routes):
+                    if not routes_are_feasible(routes):
                         sys.exit('\n# start. #\n')
                         pass
-                    shuffled_routes[i].remove_vertex_and_repair(order)
+                    routes[i].remove_vertex_and_repair(order)
                     shuffled_vertices.remove(order)
 
                     #-------------------------------
-                    # get the index for the destination route in shuffled_routes.
-                    r_index = shuffled_routes.index(other_routes[best_new_position_route[1]])
+                    # get the index for the destination route in routes.
+                    r_index = routes.index(other_routes[best_new_position_route[1]])
                     
-                    start = shuffled_routes[r_index].get_vertex_by_uid(best_new_position_route[2])
-                    end = shuffled_routes[r_index].get_vertex_by_uid(best_new_position_route[3])
+                    start = routes[r_index].get_vertex_by_uid(best_new_position_route[2])
+                    end = routes[r_index].get_vertex_by_uid(best_new_position_route[3])
                     
                     # Add order to destination route
-                    shuffled_routes[r_index].add_vertex_between_vertices(order, start, end)
-                    if not routes_are_feasible(shuffled_routes):
+                    routes[r_index].add_vertex_between_vertices(order, start, end)
+                    if not routes_are_feasible(routes):
                         #sys.exit('\n# local_search_tw given bad input. #\n')
                         pass
                     
@@ -976,11 +974,11 @@ def local_search_tw(routes):
                     print(e)
                     print('ERROR')
                     time.sleep(5)
-                    plot_routes(shuffled_routes, "error")
+                    plot_routes(routes, "error")
                     plt.show()
                   
             else:
-                if not routes_are_feasible(shuffled_routes):
+                if not routes_are_feasible(routes):
                     sys.exit('\nBAD ELSE\n')
                 '''
                 print('fail')
@@ -990,7 +988,7 @@ def local_search_tw(routes):
                 get_route_distance(routes[routes.index(other_routes[best_new_position_route[1]])])))
                 print(cost_of_break(order, origin_route))
                 '''
-    return (shuffled_routes, local_search_actioned)
+    return (routes, local_search_actioned)
 
 def grasp(orders, graph_results=True):
 
