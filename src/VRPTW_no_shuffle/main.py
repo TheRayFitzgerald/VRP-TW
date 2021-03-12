@@ -1,10 +1,10 @@
+from Order import Order
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
 from VRPTW.grahamscan import GrahamScan
-from DCVRP.GRASP import grasp as grasp_DCVRP
-from VRPTW.GRASP import grasp as grasp_VRPTW, Order, plot_routes, routes_are_feasible, get_overall_distance
-from read_config import read_config
+from GRASP import grasp, calculate_slack, order_is_reachable, routes_are_feasible, tw_shuffle
+from Config import Config
 import matplotlib.pyplot as plt
 import random, pickle, datetime, time, os, sys
 import numpy as np
@@ -14,33 +14,28 @@ all_orders = list()
 all_users = list()
 all_vans = list()
 
-config_vars = read_config()
-for key,val in config_vars.items():
-    exec(key + '=val')
+NUMBER_OF_ORDERS = Config.NUMBER_OF_ORDERS
 
 def main():
 
     #create a list of orders
     orders = create_orders(NUMBER_OF_ORDERS)
 
-    routes_DCVRP = grasp_DCVRP(orders, False)
-    routes_VRPTW = grasp_VRPTW(orders, False)
-    plot_routes(routes_DCVRP, "DCVRP 1")
-    plot_routes(routes_DCVRP, "DCVRP 2")
-    plot_routes(routes_VRPTW, "VRPTW 1")
-    plot_routes(routes_VRPTW, "VRPTW 2")
 
-    print(routes_are_feasible(routes_DCVRP))
-    print(get_overall_distance(routes_DCVRP))
-    print(routes_are_feasible(routes_VRPTW))
-    print(get_overall_distance(routes_VRPTW))
+    for order in orders:
+        
+        time_to_delivery = (order.scheduled_time-datetime.timedelta(hours=9))
 
-    plt.show()
-
-
-    return routes_are_feasible(routes_DCVRP)
-
-    
+        print('###')
+        print(order.scheduled_time)
+        # print(time_to_delivery.total_seconds())
+        print(order.distance)
+        print(order.slack)
+        print(order.scheduled_time.seconds)
+        print('###')
+        
+    print(calculate_slack(orders[-1]))
+    routes = grasp(orders, True)
     if not routes:
         a = input("Main Routing Fail. Would you like to save these Orders? [y/n]: ")
         if a == 'y':
@@ -75,7 +70,41 @@ def main():
             
         else:
             print('Exiting')
+    
+    '''
 
+    is_reachable_count = 0
+    not_reachable_count = 0
+
+    for route in routes:
+        for vertex in route.vertices():
+            if order_is_reachable(route, vertex):
+                is_reachable_count += 1
+            else:
+                print(vertex.order.slack)
+                #time.sleep(2)
+                not_reachable_count += 1
+
+    print(is_reachable_count, not_reachable_count)
+    print('ya')
+
+    print('$$$')
+    print(routes_are_feasible(routes))
+    
+    
+    
+    '''
+        
+    '''
+    print('\nUnsorted orders: ')
+    for order in orders:
+        print(order)
+
+    print('\nsorted orders: ')
+    orders_gch = greedy_construction(orders)
+    for order in orders_gch:
+        print(order[0])
+    '''
 
 def main2():
    
@@ -115,7 +144,7 @@ def create_orders(quantity):
         random_hour = random.uniform(1, 2.5)
         
         # orders scheduled between 10:00 -> 18:00(delivery starts at 09:00)
-        scheduled_time = datetime.timedelta(hours=randrange(10, 16), minutes=randrange(0, 59))
+        scheduled_time = datetime.timedelta(hours=randrange(10, 18), minutes=randrange(0, 59))
 
         time_to_delivery = (scheduled_time-datetime.timedelta(hours=9))
 
@@ -132,38 +161,6 @@ def create_orders(quantity):
 if __name__ == '__main__':
 
     #sys.stdout = open(os.devnull, 'w')
-    '''
-    while True:
-        if not main():
-            plt.show()
-            break
-    '''
-    #main()
-    orders = create_orders(NUMBER_OF_ORDERS)
-    routes = grasp_VRPTW(orders, False)
-    while routes_are_feasible(routes):
-
-        routes = grasp_VRPTW(orders, False)
-        print('adjust speed')
-        time.sleep(3)
-
-        # with is like your try .. finally block in this case
-        with open('config.txt', 'r') as file:
-            # read a list of lines into data
-            lines = file.readlines()
-
-        lines[1] = lines[1].split()[0] + ' ' + str(int(lines[1].split()[1]) - 1) + '\n'
-
-        with open('config.txt', 'w') as file:
-            file.writelines(lines)
-
-
-
-    plot_routes(routes, "DCVRP")
-
-    print(routes_are_feasible(routes))
-    print(get_overall_distance(routes))
-
-    plt.show()
+    main()
 
 

@@ -1,10 +1,117 @@
 Initial: 30
-Initial: 2287
+Initial: 2533
 LS
 30
-2197
+2429
 Shuffle
 30
-2140
+2424
 []
 Convergence Counter: 0
+LS
+30
+2272
+Shuffle
+30
+2272
+[]
+Convergence Counter: 0
+LS
+30
+1952
+Shuffle
+30
+1952
+[]
+Convergence Counter: 0
+LS
+30
+1845
+Shuffle
+30
+1845
+[]
+Convergence Counter: 0
+LS
+30
+1845
+Shuffle
+30
+1841
+[]
+Convergence Counter: 0
+LS
+30
+1841
+Shuffle
+30
+1841
+[]
+Convergence Counter: 0
+LS
+30
+1841
+Shuffle
+30
+1841
+[]
+Convergence Counter: 0
+LS
+30
+1841
+Shuffle
+30
+1841
+[]
+Convergence Counter: 1
+LS
+30
+1841
+Shuffle
+30
+1841
+[]
+Convergence Counter: 0
+LS
+30
+1841
+Shuffle
+30
+1841
+[]
+Convergence Counter: 0
+LS
+30
+1841
+Shuffle
+30
+1841
+[]
+Convergence Counter: 0
+LS
+30
+1841
+Shuffle
+30
+1841
+[]
+Convergence Counter: 0
+LS
+30
+1841
+Shuffle
+30
+1841
+[]
+Convergence Counter: 0
+LS
+30
+1841
+Shuffle
+30
+1841
+[]
+Convergence Counter: 0
+LS
+30
+1841

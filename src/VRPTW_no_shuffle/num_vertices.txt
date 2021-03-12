@@ -1,0 +1,10 @@
+Initial: 20
+Initial: 1833
+LS
+20
+1763
+Shuffle
+20
+1763
+[]
+Convergence Counter: 0
