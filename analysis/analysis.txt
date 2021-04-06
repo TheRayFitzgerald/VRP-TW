@@ -1,0 +1,31 @@
+
+-- Structure --
+Experiments & Data Collection
+	- Runtimes for subject and control: [[ Float ]]
+	- Overall distances: [[ Float ]]
+	- Config: Dict with Int Values 
+	
+
+Data Analysis
+	- using all samples, calculate
+		- overall winner
+		- its mean runtime
+		- difference in mean runtimes
+
+--- Tests ---
+
+
+1. Without shuffling routes, vertices before Local Search, order of routes for TW Shuffle
+
+- Compare 2-opt and Shuffle
+- Seed selection process
+- 	
+
+3.
+(12.81, 5.0)
+(1739.49, 2244.01) 
+
+
+
+
+

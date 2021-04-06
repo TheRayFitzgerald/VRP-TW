@@ -1,9 +1,9 @@
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
-from grahamscan import GrahamScan
-from GRASP1 import grasp as grasp1, Order, plot_routes, routes_are_feasible, get_overall_distance
-from GRASP2 import grasp as grasp2
+from VRPTW.grahamscan import GrahamScan
+from VRPTW.GRASP import grasp as grasp_VRPTW, Order, plot_routes, routes_are_feasible, get_overall_distance
+from VRPTW_no_shuffle.GRASP import grasp as grasp1
 from read_config import read_config
 import matplotlib.pyplot as plt
 import random, pickle, datetime, time, os, sys, json
@@ -25,7 +25,7 @@ for key,val in config_vars.items():
 # write out the 0% initial progress bar
 i=0
 sys.stdout.write('\r')
-sys.stdout.write("[%-10s] %d%%" % ('='*10*i, 100*i/N_SAMPLES))
+sys.stdout.write("[%-30s] %d%%" % ('='*10*i, 100*i/N_SAMPLES))
 sys.stdout.flush()
 
 def main():
@@ -38,12 +38,12 @@ def main():
         orders = create_orders(NUMBER_OF_ORDERS)
 
         start = time.time()
-        routes_1 = grasp1(orders, False)
+        routes_1 = grasp_VRPTW(orders, GRAPH_ROUTES)
         routes_1_time = round(time.time() - start, 3)
         routes_1_distance = round(get_overall_distance(routes_1), 3)
 
         start = time.time()
-        routes_2 = grasp2(orders, False)
+        routes_2 = grasp1(orders, GRAPH_ROUTES)
         routes_2_time = round(time.time() - start, 3)
         routes_2_distance = round(get_overall_distance(routes_2), 3)
         
@@ -165,34 +165,6 @@ def main2():
         else:
             print('Exiting')
 
-def main3():
-
-    blockPrint()
-
-    orders = create_orders(NUMBER_OF_ORDERS)
-
-    start = time.time()
-    routes_1 = grasp1(orders, True)
-    routes_1_time = round(time.time() - start, 3)
-    routes_1_distance = round(get_overall_distance(routes_1), 3)
-
-    enablePrint()         
-
-    sys.stdout.write('\r')
-    sys.stdout.write("[%-10s] %d%%" % ('='*10*(i+1), 100*(i+1)/N_SAMPLES))
-    sys.stdout.flush()
-    time.sleep(0.25)
-    print()
-    print('Total Runtime: %.3f Seconds' % routes_1_time)
-    print('Total Distance: %.3f Meters' % routes_1_distance)
-
-    blockPrint()
-
-    if GRAPH_ROUTES:
-        plot_routes(routes_1, "Final Routes")
-        plt.show()
-
-
 def create_orders(quantity):
     orders = list()
     for i in range (1, quantity+1):
@@ -230,7 +202,7 @@ if __name__ == '__main__':
             plt.show()
             break
     '''
-    main3()
+    main()
     '''
     orders = create_orders(NUMBER_OF_ORDERS)
     routes = grasp_VRPTW(orders, False)

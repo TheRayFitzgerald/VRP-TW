@@ -1,0 +1,1 @@
+{"runtimes": [[1.825, 3.823]], "distances": [[1431.235, 2156.74]], "config": {"MAX_NUMBER_OF_ROUTES": 6, "SPEED": 15, "NUMBER_OF_ORDERS": 15, "CONVERGENCE_COUNTER": 3, "N_SAMPLES": 1, "GRAPH_ROUTES": 0}}
