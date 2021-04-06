@@ -1,3 +1,7 @@
+'''
+This grasp uses the old convex hull for seed selection
+'''
+
 from Order import Order
 from math import sqrt
 from random import random, randrange
@@ -160,53 +164,79 @@ def get_overall_distance(routes):
 
     return overall_distance
 
-'''
-    Input: List of orders
-    Output: List of routes with one order(seed) in each, list of unscheduled orders
 
-    S = empty list
-    First_seed = furthest order from the depot
-    Add first seed to list of seeds S. Remove first seed from list of orders
-
-    While number of seeds is less than the maximum number of routes:
-
-        Find the order that maximises the sum of distances to the existing seeds in S
-        Add the order to the list of seeds S. Remove the order from list of orders
-
-    R = empty list
-    For each seed in the list of seeds S:
-        Create a new route
-        Add the seed to the route and connect it to the depot
-        Add this route to the list of routes R
-
-    Return: R, Orders
-'''
 def route_initialization(orders):
 
+    L_points, L = GrahamScan(orders)
+    L_comp = list(set(orders) - set(L))
+
+    # sort by shortest distance from depot
+    L_comp.sort(key=lambda x: x.slack, reverse=True)
+
     S = list()
+    S.append(max(L, key=attrgetter('slack')))
 
-    first_seed = max(orders, key=attrgetter('distance'))
-    S.append(first_seed)
-
-    orders.remove(first_seed)
+    # check this line with KB
+    L.remove(max(L, key=attrgetter('slack')))
 
     while len(S) < MAX_NUMBER_OF_ROUTES:
 
         # find order that maximises sum of distances from existing seeds in S
-        new_seed = (None, 0)
-        for order in orders:
+        j = (None, 0)
+        for order in L:
             accum_distance = 0
             for seed in S:
                 accum_distance += get_distance_between_vertices(seed.coords, order.coords)
-            if accum_distance > new_seed[1]:
-                new_seed = (order, accum_distance)
-        
-        new_seed = new_seed[0]
+            if accum_distance > j[1]:
+                j = (order, accum_distance)
+        j = j[0]
 
-        orders.remove(new_seed)
-        new_seed.seed = True
-        S.append(new_seed)
+        # get min distance between j and seeds
+        min_distance_to_j = None
+        for seed in S:
+            if min_distance_to_j == None:
+                try:
+                    min_distance_to_j = get_distance_between_vertices(seed.coords, j.coords)
+                except Exception as e:
+                    print(e)
+                    print('seed')
+                    print(seed)
+                    print('j')
+                    print(j)
+                    time.sleep(10)
+            if get_distance_between_vertices(seed.coords, j.coords) < min_distance_to_j:
+                min_distance_to_j = get_distance_between_vertices(seed.coords, j.coords)
 
+        # get i, first item of L_comp
+
+        i = None
+
+        for order in L_comp:
+            accum_distance = 0
+            for seed in S:
+                accum_distance += get_distance_between_vertices(seed.coords, order.coords)
+            if i == None:
+                i = (order, accum_distance)
+            if accum_distance > i[1]:
+                i = (order, accum_distance)
+        i = i[0]
+
+        # get min distance between i and seeds
+        min_distance_to_i = None
+        for seed in S:
+            if min_distance_to_i == None:
+                min_distance_to_i = get_distance_between_vertices(seed.coords, i.coords)
+            if get_distance_between_vertices(seed.coords, i.coords) < min_distance_to_i:
+                min_distance_to_i = get_distance_between_vertices(seed.coords, i.coords)
+
+        if min_distance_to_i < min_distance_to_j:
+            seed_order = L.pop(L.index(j))
+            seed_order.seed = True
+            S.append(seed_order)
+        elif min_distance_to_i > min_distance_to_j:
+            seed_order = L_comp.pop(L_comp.index(i))
+            seed_order.seed = True
+            S.append(seed_order)
 
     routes = list()
     i = 0
@@ -222,8 +252,8 @@ def route_initialization(orders):
     if not routes_are_feasible(routes):
         sys.exit('\n# Caught Errror #\nCourier speed is too low to reach seeds within their time windows.\nIncrease courier speed to create seeds.\n')
 
-
-    return [routes, orders]
+    unscheduled_orders = L + L_comp
+    return [routes, unscheduled_orders]
 
 def calculate_penalty(order, min_cost, other_routes):
 

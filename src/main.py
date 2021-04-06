@@ -2,8 +2,8 @@ from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
-from GRASP1 import grasp as grasp1, Order, plot_routes, routes_are_feasible, get_overall_distance
-from GRASP2 import grasp as grasp2
+from GRASP1 import grasp as grasp2, Order, plot_routes, routes_are_feasible, get_overall_distance
+from GRASP1_copy import grasp as grasp1
 from read_config import read_config
 import matplotlib.pyplot as plt
 import random, pickle, datetime, time, os, sys, json
@@ -75,10 +75,8 @@ def main():
 
 
     if GRAPH_ROUTES:
-        plot_routes(routes_1, "grasp1 1")
-        plot_routes(routes_1, "grasp1 2")
-        plot_routes(routes_2, "VRPTW 1")
-        plot_routes(routes_2, "VRPTW 2")
+        plot_routes(routes_1, "grasp1")
+        plot_routes(routes_2, "grasp2") 
     '''
     print(routes_are_feasible(routes_1))
     print(get_overall_distance(routes_1))
@@ -172,7 +170,7 @@ def main3():
     orders = create_orders(NUMBER_OF_ORDERS)
 
     start = time.time()
-    routes_1 = grasp1(orders, True)
+    routes_1 = grasp2(orders, True)
     routes_1_time = round(time.time() - start, 3)
     routes_1_distance = round(get_overall_distance(routes_1), 3)
 
@@ -230,7 +228,7 @@ if __name__ == '__main__':
             plt.show()
             break
     '''
-    main3()
+    main()
     '''
     orders = create_orders(NUMBER_OF_ORDERS)
     routes = grasp_VRPTW(orders, False)
