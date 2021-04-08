@@ -1,202 +1,42 @@
 Initial: 15
-Initial: 1724
+Initial: 1562
 LS
 15
-1582
+1489
 Shuffle
 15
-1582
+1430
 []
 Convergence Counter: 0
 LS
 15
-1582
+1401
 Shuffle
 15
-1582
+1401
 []
 Convergence Counter: 0
 LS
 15
-1582
+1401
 Shuffle
 15
-1582
+1401
+[]
+Convergence Counter: 0
+LS
+15
+1401
+Shuffle
+15
+1401
 []
 Convergence Counter: 1
 LS
 15
-1582
+1401
 Shuffle
 15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 1
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 0
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 1
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 1
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 2
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 2
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 2
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 2
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 2
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 2
-LS
-15
-1582
-Shuffle
-15
-1582
-[]
-Convergence Counter: 2
-LS
-15
-1582
-Shuffle
-15
-1582
+1401
 []
 Convergence Counter: 2

@@ -3,7 +3,7 @@ from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
-from Graph import Graph, Vertex
+from Route import Route, Vertex
 from read_config import read_config
 import matplotlib.pyplot as plt
 import random, operator, time, copy, pickle, datetime, math, sys
@@ -211,7 +211,7 @@ def route_initialization(orders):
     routes = list()
     i = 0
     for seed in S:
-        g = Graph(i)
+        g = Route(i)
         depot = g.add_vertex(Order(0, 'ray', DEPOT_COORDS, START_TIME, 0))
         seed = g.add_vertex(seed, seed=True)
         g.add_edge(depot, seed)
@@ -372,7 +372,7 @@ def main_routing(routes, unscheduled_orders):
                 added_order = routes[routes.index(added_order_rcp[1][0])].add_vertex(added_order_rcp[0])
             # order cannot be added to any existing routes. Create a new dedicated route.
             else:
-                g = Graph(99)
+                g = Route(99)
                 depot = g.add_vertex(Order(0, 'ray', DEPOT_COORDS, START_TIME, 0))
                 added_order = g.add_vertex(added_order_rcp[0])
                 g.add_edge(depot, added_order)
@@ -419,7 +419,7 @@ def two_opt_route_improve(routes):
         route_finder = RouteFinder(dist_mat, routes[i].vertices(), iterations=10)
         best_distance, best_route = route_finder.solve()
 
-        improved_route = Graph('4')
+        improved_route = Route('4')
 
         for start, end in zip(best_route, best_route[1:]):
 
@@ -444,7 +444,7 @@ def two_opt_route_improve_2(routes):
             route_finder = RouteFinder(dist_mat, routes[i].vertices(), iterations=10)
             best_distance, best_route = route_finder.solve()
 
-            improved_route = Graph('4')
+            improved_route = Route('4')
             time.sleep(4)
 
             for start, end in zip(best_route, best_route[1:]):
@@ -728,7 +728,7 @@ def tw_shuffle(routes):
 
             # create a new improved route with abritrary ID
             # this improved route will be used to record changes for all vertices for this given route.
-            improved_route = Graph('4')
+            improved_route = Route('4')
 
             shuffled_vertices = route.vertices()[1:]
             random.shuffle(shuffled_vertices)
