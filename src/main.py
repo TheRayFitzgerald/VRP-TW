@@ -2,16 +2,20 @@ from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
-from GRASP1 import grasp as grasp2, Order, plot_routes, routes_are_feasible, get_overall_distance
-from GRASP1_copy import grasp as grasp1
+from GRASP2 import grasp as grasp2, Order, plot_routes, routes_are_feasible, get_overall_distance
+from GRASP1 import grasp as grasp1
 from read_config import read_config
 import matplotlib.pyplot as plt
-import random, pickle, datetime, time, os, sys, json
+import random, pickle, datetime, time, os, sys, json, copy
 #import numpy as np
 
 results = dict()
+'''
 results['runtimes'] = list()
 results['distances'] = list()
+results['num_seed_routes'] = list()
+results['total_num_routes'] = list()
+'''
 #results['winners'] = list()
 results['config'] = dict()
 
@@ -190,6 +194,113 @@ def main3():
         plot_routes(routes_1, "Final Routes")
         plt.show()
 
+def main4():
+
+    #create a list of orders
+    for i in range(N_SAMPLES):
+
+        blockPrint()
+
+        orders_1 = create_orders(NUMBER_OF_ORDERS)
+        orders_2 = copy.deepcopy(orders_1)
+
+        start = time.time()
+        routes_1 = grasp1(orders_1, False)
+        routes_1_time = round(time.time() - start, 3)
+        routes_1_distance = round(get_overall_distance(routes_1), 3)
+  
+        start = time.time()
+        routes_2 = grasp2(orders_2, False)
+        routes_2_time = round(time.time() - start, 3)
+        routes_2_distance = round(get_overall_distance(routes_2), 3)
+       
+        results['runtimes'].append([routes_1_time, routes_2_time])
+        results['distances'].append([routes_1_distance, routes_2_distance])
+
+        routes_1_num_seed_routes = count_seed_routes(routes_1)
+        routes_2_num_seed_routes = count_seed_routes(routes_2)
+
+        routes_1_num_routes = len([route for route in routes_1 if route.num_vertices() > 1])
+        routes_2_num_routes = len([route for route in routes_2 if route.num_vertices() > 1])
+        
+
+        results['num_seed_routes'].append([routes_1_num_seed_routes, routes_2_num_seed_routes])
+        results['total_num_routes'].append([routes_1_num_routes, routes_2_num_routes])
+        print(results)
+
+        enablePrint()
+        
+
+        sys.stdout.write('\r')
+        sys.stdout.write("[%-30s] %d%%" % ('='*10*(i+1), 100*(i+1)/N_SAMPLES))
+        sys.stdout.flush()
+        time.sleep(0.25)
+
+
+    enablePrint()
+    print('Done')
+    print(results)
+    # print a new line
+    print()
+
+    with open('results.json', 'w') as f:
+        json.dump(results, f)
+
+
+    if GRAPH_ROUTES:
+        plot_routes(routes_1, "grasp1")
+        plot_routes(routes_2, "grasp2") 
+        plt.show()
+
+
+def main5():
+    order_quantities = [10, 20, 30, 40, 50, 60, 70, 80]
+    #create a list of orders
+    for n_orders in order_quantities:
+        results[n_orders] = dict()
+        results[n_orders]['runtimes'] = list()
+        results[n_orders]['distances'] = list()
+
+    
+        for i in range(N_SAMPLES):
+            blockPrint()
+
+            orders_1 = create_orders(n_orders)
+
+            start = time.time()
+            routes_1 = grasp1(orders_1, False)
+            routes_1_time = round(time.time() - start, 3)
+            routes_1_distance = round(get_overall_distance(routes_1), 3)
+           
+            results[n_orders]['runtimes'].append(routes_1_time)
+            results[n_orders]['distances'].append(routes_1_distance)
+
+            print(results)
+
+            enablePrint()
+            
+
+            sys.stdout.write('\r')
+            sys.stdout.write("[%-30s] %d%%" % ('='*10*(i+1), 100*(i+1)/N_SAMPLES))
+            sys.stdout.flush()
+            time.sleep(0.25)
+
+
+    enablePrint()
+    print('Done')
+    print(results)
+    # print a new line
+    print()
+
+    with open('results.json', 'w') as f:
+        json.dump(results, f)
+
+
+    if GRAPH_ROUTES:
+        plot_routes(routes_1, "grasp1")
+        plot_routes(routes_2, "grasp2") 
+        plt.show()
+
 
 def create_orders(quantity):
     orders = list()
@@ -206,9 +317,6 @@ def create_orders(quantity):
         # scheduled_time = random.randrange(9, 6)
         orders.append(Order(i, 'ray', coords, scheduled_time, randrange(30)))
 
-
-        
-
     return orders
 
 
@@ -217,6 +325,16 @@ def blockPrint():
 
 def enablePrint():
     sys.stdout = sys.__stdout__
+
+def count_seed_routes(routes):
+
+    num_seed_routes = 0
+
+    for route in routes:
+        if len([vertex for vertex in route.vertices() if vertex.seed]) == 1:
+            num_seed_routes += 1
+
+    return num_seed_routes
 
 
 if __name__ == '__main__':
@@ -228,7 +346,7 @@ if __name__ == '__main__':
             plt.show()
             break
     '''
-    main()
+    main5()
     '''
     orders = create_orders(NUMBER_OF_ORDERS)
     routes = grasp_VRPTW(orders, False)

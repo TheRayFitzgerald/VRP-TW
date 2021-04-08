@@ -137,6 +137,8 @@ def main2():
         else:
             print('Exiting')
 
+
+
 def create_orders(quantity):
     orders = list()
     for i in range (1, quantity+1):

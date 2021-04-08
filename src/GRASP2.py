@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import random, operator, time, copy, pickle, datetime, math, sys
 import numpy as np
 from collections import Counter
-
 #from py2opt.routefinder import RouteFinder
 #from VRPTW.routefinder.py2opt.py2opt.routefinder import RouteFinder
 
@@ -161,22 +160,13 @@ def get_overall_distance(routes):
     return overall_distance
 
 
-def route_initialization(L, L_comp):
-
-    # sort by shortest distance from depot
-    L_comp.sort(key=lambda x: x.slack, reverse=True)
-
-    S = list()
-    S.append(max(L, key=attrgetter('slack')))
-
-    # check this line with KB
-    L.remove(max(L, key=attrgetter('slack')))
-    orders = L + L_comp
-
+def route_initialization(orders):
+    print('sds')
+    print(orders)
     orders.sort(key=lambda x: x.distance, reverse=True)
+
     S = orders[:MAX_NUMBER_OF_ROUTES]
     orders = orders[MAX_NUMBER_OF_ROUTES:]
-
 
     routes = list()
     i = 0
@@ -191,7 +181,7 @@ def route_initialization(L, L_comp):
 
     if not routes_are_feasible(routes):
         sys.exit('\n# Caught Errror #\nCourier speed is too low to reach seeds within their time windows.\nIncrease courier speed to create seeds.\n')
-    return [S, L, L_comp, routes]
+    return [routes, orders]
 
 def calculate_penalty(order, min_cost, other_routes):
 
@@ -222,7 +212,7 @@ def iterate_routes(routes, function):
             pass
 
 
-def main_routing(unscheduled_orders, S, routes):
+def main_routing(routes, unscheduled_orders):
 
     # find the min insertion cost and the best route
     print('\n######\nMain Routing\n######\n')
@@ -938,13 +928,11 @@ def local_search_tw(routes):
 
 def grasp(orders, graph_results=True):
 
-    L_points, L = GrahamScan(orders)
-    L_comp = list(set(orders) - set(L))
-    #plot_convex_hull(orders, L_points, '.r')
-    S, L, L_comp, routes = route_initialization(L, L_comp)
-    unscheduled_orders = L + L_comp    
+    # route initilization
+    routes, unscheduled_orders = route_initialization(orders)    
 
-    routes = main_routing(unscheduled_orders, S, routes)
+    # main routing
+    routes = main_routing(routes, unscheduled_orders)
 
     if not routes_are_feasible(routes):
         sys.exit('infeasible routes')
@@ -1068,9 +1056,38 @@ def calculate_time_ratingt(time_val):
         difference_mins = time_val.split(':')[1] - current_
     100/12
 
+def create_orders(quantity):
+    orders = list()
+    for i in range (1, quantity+1):
+
+        random_hour = random.uniform(1, 2.5)
+        
+        # orders scheduled between 10:00 -> 18:00(delivery starts at 09:00)
+        scheduled_time = datetime.timedelta(hours=randrange(10, 16), minutes=randrange(0, 59))
+
+        time_to_delivery = (scheduled_time-datetime.timedelta(hours=9))
+
+        coords = (random.randrange(0,300),random.randrange(0,300))
+        # scheduled_time = random.randrange(9, 6)
+        orders.append(Order(i, 'ray', coords, scheduled_time, randrange(30)))
+
+    return orders
 
 if __name__ == '__main__':
 
+    orders = create_orders(NUMBER_OF_ORDERS)
+    print('22')
+    print(orders)
+    print(NUMBER_OF_ORDERS)
+
+    start = time.time()
+    routes_1 = grasp(orders, False)
+    routes_1_time = round(time.time() - start, 3)
+    routes_1_distance = round(get_overall_distance(routes_1), 3)
+    print('Disatance')
+    print(routes_1_distance)
+
+    '''
     with open('../saved_routes/routes_13.pkl', 'rb') as input:
         routes_original = pickle.load(input)
     routes_original = [route for route in routes_original if route.num_edges() > 0]
@@ -1131,7 +1148,7 @@ if __name__ == '__main__':
                 if route.get_vertex_by_uid(uid):
                     print(route.get_vertex_by_uid(uid))
     #print(routes_original_ids)
-
+    '''
     
 
     '''

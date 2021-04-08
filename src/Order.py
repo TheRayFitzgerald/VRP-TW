@@ -12,7 +12,6 @@ class Order:
 
         self._id = id
         self._uid = random.randint(0,1000)
-        self._user = user
         self._coords = coords
         self._distance = sqrt((DEPOT_COORDS[0] - self._coords[0])**2 + (DEPOT_COORDS[1] - self._coords[1])**2)
         self._placed_time = time.time()
