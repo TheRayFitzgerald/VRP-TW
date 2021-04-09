@@ -16,7 +16,6 @@ class Order:
         self._distance = sqrt((DEPOT_COORDS[0] - self._coords[0])**2 + (DEPOT_COORDS[1] - self._coords[1])**2)
         self._scheduled_time = scheduled_time
         self._slack = scheduled_time - (datetime.timedelta(hours=9) + datetime.timedelta(minutes=round(self._distance / SPEED)))
-        self._size = size
         self._seed = False
 
     def __str__(self):
@@ -40,16 +39,8 @@ class Order:
         self._uid = uid
 
     @property
-    def user(self):
-        return self._user
-
-    @property
     def coords(self):
         return self._coords
-
-    @property
-    def placed_time(self):
-        return self._placed_time
 
     @property
     def scheduled_time(self):
@@ -60,16 +51,8 @@ class Order:
         self._scheduled_time = scheduled_time
 
     @property
-    def size(self):
-        return self._size
-
-    @property
     def distance(self):
         return self._distance
-
-    @property
-    def time_to_delivery(self):
-        return self._time_to_delivery
 
     @property
     def slack(self):
@@ -86,9 +69,6 @@ class Order:
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-
-
-
 
 
 

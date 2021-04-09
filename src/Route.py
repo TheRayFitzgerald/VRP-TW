@@ -1,53 +1,6 @@
 from random import randint
 from math import sqrt
 import time
-""" Sample solutions for Lab 05.
-
-    Implements the graph as a map of (vertex,edge-map) pairs.
-"""
-
-
-class Vertex:
-    """ A Vertex in a graph. """
-
-    def __init__(self, element, seed=False):
-        """ Create a vertex, with a data element.
-
-        Args:
-            element - the data or label to be associated with the vertex
-        """
-        self._element = element
-        self._seed = seed
-
-    def __str__(self):
-        """ Return a string representation of the vertex. """
-        return str(self._element)
-
-    def __lt__(self, v):
-        """ Return true if this element is less than v's element.
-
-        Args:
-            v - a vertex object
-        """
-        return self._element < v.element()
-
-    def __repr__(self):
-        return str(self)
-
-    def element(self):
-        """ Return the data for the vertex. """
-        return self._element
-
-    @property
-    def order(self):
-        """ Return the data for the vertex. """
-        return self._element
-
-    @property
-    def seed(self):
-
-        return self._seed
-
 
 class Edge:
     """ An edge in a graph.
@@ -127,8 +80,8 @@ class Route:
 
     def __str__(self):
         """ Return a string representation of the graph. """
-        hstr = ('|V| = ' + str(self.num_orders())
-                + '; |E| = ' + str(self.num_edges()))
+        hstr = ('|Orders| = ' + str(self.num_orders())
+                + '; |Edges| = ' + str(self.num_edges()))
         vstr = '\nOrder: '
         for v in self._structure:
             vstr += str(v) + '-'
@@ -249,23 +202,9 @@ class Route:
         """
         return len(self._structure[v])
 
-    def get_vertex_position(self, v):
-
-        return list(self._structure).index(v)
-
     # ----------------------------------------------------------------------#
 
     # ADT methods to modify the graph
-
-    def add_vertex(self, element, seed=False):
-        """ Add a new vertex with data element.
-
-        If there is already a vertex with the same data element,
-        this will create another vertex instance.
-        """
-        v = Vertex(element, seed)
-        self._structure[v] = dict()
-        return v
 
     def add_order(self, order):
 
@@ -274,27 +213,6 @@ class Route:
                 return o
         self._structure[order] = dict()
         return order
-
-    def add_existing_vertex(self, vertex):
-
-        for v in self._structure:
-            if v == vertex:
-                return v
-        self._structure[vertex] = dict()
-        return vertex
-
-    def add_vertex_between_vertices(self, v, w1, w2):
-
-        edgelist = [edge for edge in self.get_edges(self.vertices()[0]) if edge.start() == self.vertices()[0]]
-        self.remove_edge(self.get_edge(w1, w2))
-        vertex = self.add_existing_vertex(v)
-        if w2.order.coords == (150, 150) and len(edgelist) == 0:
-            self.add_edge(w2, v)
-            self.add_edge(v, w1)
-        else:
-            self.add_edge(w1, v)
-            self.add_edge(v, w2)
-        return vertex
 
     def add_order_between_orders(self, o, o1, o2):
 
@@ -313,32 +231,6 @@ class Route:
     def remove_order(self, order):
 
         return self._structure.pop(order, None)
-
-    def remove_vertex_and_repair(self, vertex):
-
-        try:
-            if self.degree(vertex) > 1:                
-                w1 = self.get_edges(vertex)[0].opposite(vertex)
-                w2 = self.get_edges(vertex)[1].opposite(vertex)
-
-                # remove surroundin edges and the vertex itself
-                self.remove_edge(self.get_edges(vertex)[0])
-                self.remove_edge(self.get_edges(vertex)[0])
-                self.remove_vertex(vertex)
-
-                # make reparations
-                self.add_edge(w1, w2)
-
-            # The order's degree is <= 1. Therefore it is the only order in the route.
-            # Therefore, we want to remove the route altogether.
-            else:
-                self.remove_edge(self.get_edges(vertex)[0])
-                self.remove_vertex(vertex)
-
-        except Exception as e:
-            print('here')
-            print(e)
-            time.sleep(5)
 
     def remove_order_and_repair(self, order):
 
@@ -425,7 +317,6 @@ class Route:
         for order in self.orders():
             if self.degree(order) == 1 and order != self.orders()[0]:
                 self.add_edge(order, self.orders()[0])
-        
 
     def erase(self):
         self._structure = dict()

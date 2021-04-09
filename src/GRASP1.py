@@ -3,7 +3,7 @@ from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
 from grahamscan import GrahamScan
-from Route import Route, Vertex
+from Route import Route
 from read_config import read_config
 import matplotlib.pyplot as plt
 import random, operator, time, copy, pickle, datetime, math, sys
@@ -50,6 +50,16 @@ def is_completed_route2(route):
         print('Complete Route')        
     else:
         print('Incomplete Route')
+
+def clean_routes(routes):
+
+    # remove any empty routes
+    routes = [route for route in routes if route.num_orders() > 1]
+
+    for route in routes:
+        route.complete_route()
+
+    return routes
 
 def order_is_reachable(route, order, flip_direction=False):
     total_time = 0
@@ -410,8 +420,8 @@ def main_routing(routes, unscheduled_orders):
             print(e)
             time.sleep(4)
 
-    for route in routes:
-        route.complete_route()
+    clean_routes(routes)
+
     return routes
 
 # takes routes and utilises 2-opt to imrpove the routes
@@ -488,7 +498,7 @@ def cost_of_break(order, route):
 
         d3 = route.get_distance_between_orders(o1, o2)
     else:
-        v1 = original_edges[0].opposite(order)
+        o1 = original_edges[0].opposite(order)
         d1 = route.get_distance_between_orders(o1, order)
         d2 = d1
         # depot to depot
@@ -1060,6 +1070,18 @@ def grasp(orders, graph_results=True):
    
     routes = local_search_tw_shuffle_iterator(routes, graph_results)
 
+    print('####')
+    print(len(routes))
+    print(len([route for route in routes if route.num_orders() > 1]))
+
+    routes = clean_routes(routes)
+
+    print(len(routes))
+    print(len([route for route in routes if route.num_orders() > 1]))
+    print('####')
+    print([route for route in routes if route.num_orders() <= 1])
+    time.sleep(3)
+
     return routes
    
 
@@ -1201,13 +1223,15 @@ if __name__ == '__main__':
     print(NUMBER_OF_ORDERS)
 
     start = time.time()
-    routes_1 = grasp(orders, True)
+    routes_1 = grasp(orders, GRAPH_ROUTES)
     routes_1_time = round(time.time() - start, 3)
     routes_1_distance = round(get_overall_distance(routes_1), 3)
     print('Disatance')
     print(routes_1_distance)
-    plot_routes(routes_1)
-    plt.show()
+
+    if GRAPH_ROUTES:
+        plot_routes(routes_1)
+        plt.show()
 
 
     '''
