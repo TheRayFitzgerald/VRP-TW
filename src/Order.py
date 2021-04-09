@@ -14,9 +14,7 @@ class Order:
         self._uid = random.randint(0,1000)
         self._coords = coords
         self._distance = sqrt((DEPOT_COORDS[0] - self._coords[0])**2 + (DEPOT_COORDS[1] - self._coords[1])**2)
-        self._placed_time = time.time()
         self._scheduled_time = scheduled_time
-        self._time_to_delivery = random.randrange(30)
         self._slack = scheduled_time - (datetime.timedelta(hours=9) + datetime.timedelta(minutes=round(self._distance / SPEED)))
         self._size = size
         self._seed = False
