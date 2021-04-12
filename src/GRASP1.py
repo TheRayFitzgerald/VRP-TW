@@ -27,8 +27,6 @@ for key,val in config_vars.items():
 local_search_actioned = False
 colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
 
-def sort_L_comp(L_comp):
-    unsorted_list = list()
 
 def calculate_slack(order):
     return order.scheduled_time - (START_TIME + datetime.timedelta(minutes=round(order.distance / SPEED))) 
@@ -77,21 +75,6 @@ def distance_to_order(route, order):
 
     return total_distance
 
-def route_direction(route):
-
-    if route.num_orders() <= 1:
-        return None
-
-    edges = route.edges_in_order()
-    for order in route.orders()[1:]:
-        if not order_is_reachable(route, order):
-            for order in route.orders()[1:]:
-                if not order_is_reachable(route, order, True):
-                    print('UNREACHABLE')
-                    sys.exit('UNREACHABLE ROUTE')
-            edges.reverse()
-            break
-    route_directed_edges[route] = edges
 
 def order_is_reachable(route, order, flip_direction=False):
     total_time = 0
@@ -130,26 +113,11 @@ def order_is_reachable(route, order, flip_direction=False):
 
     return reachable
 
-def route_is_feasible(route):
-    #print('\n########')
-    #print('num vertices %i' % route.num_orders())
-    for order in route.orders()[1:]:
-        if not order_is_reachable(route, order):
-            for order in route.orders()[1:]:
-                if not order_is_reachable(route, order, True):
-                    '''print('\nRoute\n')
-                    print(route)
-                    print('not reachable')
-                    print(vertex)
-                    print('\n########')'''
-                    return False
-    #print('\n########')
-    return True
 
 def routes_are_feasible(routes):
-
+    routes = clean_routes(routes)
     for route in routes:
-        if not route_is_feasible(route):
+        if not route.is_feasible():
             return False
 
     return True
@@ -353,13 +321,13 @@ def main_routing(routes, unscheduled_orders):
                     distance_to_o2 = distance_to_order(route, o2)
                     # add order to route and check if route is still fully feasible
                     route.add_order_between_orders(order, o1, o2)
-                    if route.is_feasible;
+                    if route.is_feasible():
 
                         d3 = route.get_distance_between_orders(o1, o2)
                         d1 = get_distance_between_orders(o1, order)
                         d2 = get_distance_between_orders(order, o2)
 
-                        cost = d1 + d2 - d3 + (distance_to_order(route, o2) - distance_to_o2)
+                        cost = (d1 + d2 - d3) + (distance_to_order(route, o2) - distance_to_o2)
                         
                         # get the optimum route and its associated cost.
                         if route_cost_penalty == None or cost < route_cost_penalty[1]:
@@ -423,7 +391,7 @@ def main_routing(routes, unscheduled_orders):
                 added_order = g.add_order(added_order_rcp[0])
                 g.add_edge(depot, added_order)
 
-                if not route_is_feasible(g):
+                if not g.is_feasible():
                     sys.exit('\n# Caught Errror #\nCourier speed is too low to reach some order on a direct path.\nIncrease courier speed to allow feasibility.\n')
                 else:
                     routes.append(g)
@@ -452,7 +420,7 @@ def main_routing(routes, unscheduled_orders):
             print(e)
             time.sleep(4)
 
-    clean_routes(routes)
+    routes = clean_routes(routes)
 
     return routes
 
@@ -503,7 +471,7 @@ def two_opt_route_improve_2(routes):
         
             improved_route.complete_route()
 
-            if route_is_feasible(improved_route):
+            if improved_route.is_feasible():
                 print('infeasible')
                 improved_routes.append(improved_route)
                 #time.sleep(3)
@@ -816,7 +784,7 @@ def tw_shuffle(routes):
                     print('-----------------------\n')
                     '''
                     # check if route is feasible: all orders in route are reachable within their TW's.
-                    if route_is_feasible(improved_route):
+                    if improved_route.is_feasible():
                         # add route to list of all feasible routes for this order
                         feasible_routes.append(copy.deepcopy(improved_route))
                     # undo changes
@@ -860,7 +828,6 @@ def tw_shuffle(routes):
                 print(improved_route)
                 print(improved_route.orders()[1:])
                 #print('Original feasible')
-                #print(route_is_feasible(route))
                 if improved_route.num_orders() != route.num_orders():
                     print('LOST VERTICES\n')
                 elif get_route_distance(improved_route) > get_route_distance(route):
@@ -1018,7 +985,7 @@ def local_search(routes):
 
                     # find the new position with the lowest cost
                     try:
-                        if route_is_feasible(improved_other_route) and (best_new_position_route == None or \
+                        if improved_other_route.is_feasible() and (best_new_position_route == None or \
                         route_distance_difference(improved_other_route, other_routes[j]) < route_distance_difference(best_new_position_route[0], other_routes[best_new_position_route[1]])):
                             
                             best_new_position_route = [copy.deepcopy(improved_other_route), j, start.uid, end.uid]
@@ -1043,7 +1010,7 @@ def local_search(routes):
             if best_new_position_route == None:
                 break
             # check if dest route distance + cost of break in origin route is better than old dest route distance
-            if best_new_position_route != None and route_is_feasible(best_new_position_route[0]) and route_is_feasible(origin_route) and ((cost_of_break(order, origin_route) + get_route_distance(best_new_position_route[0])) \
+            if best_new_position_route != None and best_new_position_route[0].is_feasible() and origin_route.is_feasible() and ((cost_of_break(order, origin_route) + get_route_distance(best_new_position_route[0])) \
                 < (get_route_distance(shuffled_routes[shuffled_routes.index(other_routes[best_new_position_route[1]])]))):
 
                 local_search_actioned = True
@@ -1231,7 +1198,7 @@ def create_orders(quantity):
     return orders
 
 if __name__ == '__main__':
-
+    
     orders = create_orders(NUMBER_OF_ORDERS)
     print('22')
     print(orders)
@@ -1241,7 +1208,7 @@ if __name__ == '__main__':
     routes_1 = grasp(orders, GRAPH_ROUTES)
     routes_1_time = round(time.time() - start, 3)
     routes_1_distance = round(get_overall_distance(routes_1), 3)
-    print('Disatance')
+    print('Distance')
     print(routes_1_distance)
 
     if GRAPH_ROUTES:

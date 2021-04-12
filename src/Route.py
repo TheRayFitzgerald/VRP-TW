@@ -201,7 +201,6 @@ class Route:
         """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
         
         # start by getting an edge with depot in it
- 
         edges = [self.get_edges(self.orders()[0])[0]]
         # then add the next edge in the correct direction
         for edge in self.get_edges(edges[-1].opposite(self.orders()[0])):

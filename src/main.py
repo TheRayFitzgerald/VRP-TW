@@ -1,7 +1,7 @@
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
-from GRASP1_oldcost import grasp as grasp2, Order, plot_routes, routes_are_feasible, get_overall_distance
+from GRASP11 import grasp as grasp2, Order, plot_routes, routes_are_feasible, get_overall_distance
 from GRASP1 import grasp as grasp1
 from read_config import read_config
 import matplotlib.pyplot as plt
@@ -42,12 +42,12 @@ def main():
         orders_2 = copy.deepcopy(orders_1)
 
         start = time.time()
-        routes_1 = grasp1(orders_1, False)
+        routes_1 = grasp1(orders_1, GRAPH_STEPS)
         routes_1_time = round(time.time() - start, 3)
         routes_1_distance = round(get_overall_distance(routes_1), 3)
 
         start = time.time()
-        routes_2 = grasp2(orders_2, False)
+        routes_2 = grasp2(orders_2, GRAPH_STEPS)
         routes_2_time = round(time.time() - start, 3)
         routes_2_distance = round(get_overall_distance(routes_2), 3)
         
