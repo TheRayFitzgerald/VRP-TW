@@ -2,7 +2,6 @@ from Order import Order
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
-from grahamscan import GrahamScan
 from Route import Route
 from read_config import read_config
 import matplotlib.pyplot as plt
@@ -61,10 +60,43 @@ def clean_routes(routes):
 
     return routes
 
+def distance_to_order(route, order):
+
+    total_distance = 0
+    edges = route.edges_in_order()
+
+    for edge in edges:
+
+        start = edge.start()
+        end = edge.end()
+
+        total_distance += route.get_distance_between_orders(start, end)
+
+        if start == order or end == order:
+            break
+
+    return total_distance
+
+def route_direction(route):
+
+    if route.num_orders() <= 1:
+        return None
+
+    edges = route.edges_in_order()
+    for order in route.orders()[1:]:
+        if not order_is_reachable(route, order):
+            for order in route.orders()[1:]:
+                if not order_is_reachable(route, order, True):
+                    print('UNREACHABLE')
+                    sys.exit('UNREACHABLE ROUTE')
+            edges.reverse()
+            break
+    route_directed_edges[route] = edges
+
 def order_is_reachable(route, order, flip_direction=False):
     total_time = 0
 
-    edges = route.edges_in_order()
+    edges = route.edges_in_order_undirected()
     if flip_direction:
         edges.reverse()
 
@@ -199,7 +231,7 @@ def route_initialization(orders):
 
     S = list()
 
-    first_seed = max(orders, key=attrgetter('distance'))
+    first_seed = max(orders, key=attrgetter('distance_to_depot'))
     S.append(first_seed)
 
     orders.remove(first_seed)
@@ -225,7 +257,7 @@ def route_initialization(orders):
     routes = list()
     i = 0
     for seed in S:
-        g = Route(i)
+        g = Route()
         depot = g.add_order(Order(0, 'ray', DEPOT_COORDS, START_TIME, 0))
         seed = g.add_order(seed)
         g.add_edge(depot, seed)
@@ -315,19 +347,19 @@ def main_routing(routes, unscheduled_orders):
 
                 for edge in route.edges():
                     
-                    start = edge.start()
-                    end = edge.end()
-                    order_v = route.add_order(order)
-
+                    o1 = edge.start()
+                    o2 = edge.end()
+                    order = route.add_order(order)
+                    distance_to_o2 = distance_to_order(route, o2)
                     # add order to route and check if route is still fully feasible
-                    route.add_order_between_orders(order_v, start, end)
+                    route.add_order_between_orders(order, o1, o2)
                     if route_is_feasible(route):
 
-                        d3 = route.get_distance_between_orders(start, end)
-                        d1 = get_distance_between_orders(start, order)
-                        d2 = get_distance_between_orders(order, end)
+                        d3 = route.get_distance_between_orders(o1, o2)
+                        d1 = get_distance_between_orders(o1, order)
+                        d2 = get_distance_between_orders(order, o2)
 
-                        cost = d1 + d2 - d3
+                        cost = d1 + d2 - d3 + (distance_to_order(route, o2) - distance_to_o2)
                         
                         # get the optimum route and its associated cost.
                         if route_cost_penalty == None or cost < route_cost_penalty[1]:
@@ -338,7 +370,7 @@ def main_routing(routes, unscheduled_orders):
                             min_cost_for_route = cost
 
                     # remove order to preserve routes original state
-                    route.remove_order_and_repair(order_v)
+                    route.remove_order_and_repair(order)
 
                 # if the order is not insertable in a route, set it to a very high value
                 if min_cost_for_route == None:
@@ -743,7 +775,7 @@ def tw_shuffle(routes):
 
             # create a new improved route with abritrary ID
             # this improved route will be used to record changes for all vertices for this given route.
-            improved_route = Route('4')
+            improved_route = Route()
 
             shuffled_orders = route.orders()[1:]
             random.shuffle(shuffled_orders)
@@ -823,10 +855,10 @@ def tw_shuffle(routes):
             if improved_route.num_orders() != route.num_orders() or get_route_distance(improved_route) > get_route_distance(route):
                 print('\nOriginal')
                 print(route)
-                print(route.vertices()[1:])
+                print(route.orders()[1:])
                 print('\nImproved')
                 print(improved_route)
-                print(improved_route.vertices()[1:])
+                print(improved_route.orders()[1:])
                 #print('Original feasible')
                 #print(route_is_feasible(route))
                 if improved_route.num_orders() != route.num_orders():
@@ -998,6 +1030,8 @@ def local_search(routes):
                         #print('$$$$ END $$$$\n')
                     except Exception as e:
                         print(e)
+                        print("error on feasibility")
+                        time.sleep(10)
                         plot_routes(routes, "error on feasibility")
                         time.sleep(10)
                         plt.show()
@@ -1070,17 +1104,7 @@ def grasp(orders, graph_results=True):
    
     routes = local_search_tw_shuffle_iterator(routes, graph_results)
 
-    print('####')
-    print(len(routes))
-    print(len([route for route in routes if route.num_orders() > 1]))
-
     routes = clean_routes(routes)
-
-    print(len(routes))
-    print(len([route for route in routes if route.num_orders() > 1]))
-    print('####')
-    print([route for route in routes if route.num_orders() <= 1])
-    time.sleep(3)
 
     return routes
    
@@ -1098,21 +1122,20 @@ def plot_routes(routes, title="untitled", labeled=True):
 
     fig = plt.figure()
     plt.suptitle(title, fontsize=20)
-    ax = fig.add_subplot(111)
 
     P = list()
-    C = list()
+    #C = list()
     for route in routes:
         for order in route.orders():
             if not order.seed:
                 P.append(order.coords)
-                C.append(np.cos(order.slack.total_seconds()))
+                #C.append(np.cos(order.slack.total_seconds()))
             else:
                 plt.plot(order.coords[0], order.coords[1], 'sk')
             
             if labeled:
                 plt.annotate(order.id, (order.coords[0], order.coords[1]))
-    plt.scatter(*zip(*P), c=C)
+    plt.scatter(*zip(*P))
     # plt.legend()
     #plt.scatter(*zip(*P))
     P = np.array(P)
@@ -1149,15 +1172,7 @@ def plot_routes(routes, title="untitled", labeled=True):
         if route.num_orders() <= 1:
             break
 
-        edges = route.edges_in_order()
-        for order in route.orders()[1:]:
-            if not order_is_reachable(route, order):
-                for order in route.orders()[1:]:
-                    if not order_is_reachable(route, order, True):
-                        print('UNREACHABLE')
-                        sys.exit('UNREACHABLE ROUTE')
-                edges.reverse()
-                break
+        edges = route.edges_in_order_undirected()
         route_directed_edges[route] = edges
     
     for route, edges in route_directed_edges.items():

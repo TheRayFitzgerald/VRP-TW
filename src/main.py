@@ -1,8 +1,7 @@
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
-from grahamscan import GrahamScan
-from GRASP2 import grasp as grasp2, Order, plot_routes, routes_are_feasible, get_overall_distance
+from GRASP1_oldcost import grasp as grasp2, Order, plot_routes, routes_are_feasible, get_overall_distance
 from GRASP1 import grasp as grasp1
 from read_config import read_config
 import matplotlib.pyplot as plt
@@ -10,13 +9,13 @@ import random, pickle, datetime, time, os, sys, json, copy
 #import numpy as np
 
 results = dict()
-'''
+
 results['runtimes'] = list()
 results['distances'] = list()
-results['num_seed_routes'] = list()
-results['total_num_routes'] = list()
-'''
+#results['num_seed_routes'] = list()
+#results['total_num_routes'] = list()
 #results['winners'] = list()
+
 results['config'] = dict()
 
 config_vars = read_config()
@@ -39,15 +38,16 @@ def main():
 
         blockPrint()
 
-        orders = create_orders(NUMBER_OF_ORDERS)
+        orders_1 = create_orders(NUMBER_OF_ORDERS)
+        orders_2 = copy.deepcopy(orders_1)
 
         start = time.time()
-        routes_1 = grasp1(orders, False)
+        routes_1 = grasp1(orders_1, False)
         routes_1_time = round(time.time() - start, 3)
         routes_1_distance = round(get_overall_distance(routes_1), 3)
 
         start = time.time()
-        routes_2 = grasp2(orders, False)
+        routes_2 = grasp2(orders_2, False)
         routes_2_time = round(time.time() - start, 3)
         routes_2_distance = round(get_overall_distance(routes_2), 3)
         
@@ -346,7 +346,7 @@ if __name__ == '__main__':
             plt.show()
             break
     '''
-    main5()
+    main()
     '''
     orders = create_orders(NUMBER_OF_ORDERS)
     routes = grasp_VRPTW(orders, False)

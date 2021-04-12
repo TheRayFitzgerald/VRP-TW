@@ -1,6 +1,13 @@
 from random import randint
 from math import sqrt
-import time
+import time, datetime, sys
+from read_config import read_config
+
+START_TIME = datetime.timedelta(hours=9)
+
+config_vars = read_config()
+for key,val in config_vars.items():
+    exec(key + '=val')
 
 class Edge:
     """ An edge in a graph.
@@ -73,10 +80,9 @@ class Route:
     #    Each edge set is also maintained as a dictionary,
     #    with the opposite vertex as the key and the edge object as the value.
 
-    def __init__(self, id):
+    def __init__(self):
         """ Create an initial empty graph. """
         self._structure = dict()
-        self._id = id
 
     def __str__(self):
         """ Return a string representation of the graph. """
@@ -132,6 +138,33 @@ class Route:
 
         return sqrt((o1.coords[0] - o2.coords[0])**2 + (o1.coords[1] - o2.coords[1])**2)
 
+    def order_is_reachable(route, order, flip_direction=False):
+        total_time = 0
+
+        edges = route.edges_in_order_undirected()
+        if flip_direction:
+            edges.reverse()
+
+        #print('-- Order: %i' % order.order.id)
+        #print(edges)
+        
+        for edge in edges:
+            #print(edge)
+            start = edge.start()
+            end = edge.end()
+
+            total_time += route.get_distance_between_orders(start, end) / SPEED
+
+            if start == order or end == order:
+                break
+
+        total_time = datetime.timedelta(minutes=total_time)
+        
+        # store if it is reachable or not
+        reachable = START_TIME + total_time < order.scheduled_time
+
+        return reachable
+
     def edges(self):
         """ Return a list of all edges in the graph. """
         edgelist = []
@@ -145,28 +178,48 @@ class Route:
     def edges_in_order(self):
         """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
         
+        edges = self.edges_in_order_undirected()
+    
+        for order in self.orders()[1:]:
+            if not self.order_is_reachable(order):
+                for order in self.orders()[1:]:
+                    if not self.order_is_reachable(order, True):
+                        sys.exit('INFEASIBLE ROUTE')
+                edges.reverse()
+                break
+        
+        return edges
+
+    def is_feasible(self):
+        
+        if len(self.edges_in_order()) == len(self.edges()):
+            return True
+        return False
+
+    def edges_in_order_undirected(self):
+        """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
+        
         # start by getting an edge with depot in it
  
-        edgelist = [self.get_edges(self.orders()[0])[0]]
+        edges = [self.get_edges(self.orders()[0])[0]]
         # then add the next edge in the correct direction
-        for edge in self.get_edges(edgelist[-1].opposite(self.orders()[0])):
-            if edge not in edgelist:
-                edgelist.append(edge)
+        for edge in self.get_edges(edges[-1].opposite(self.orders()[0])):
+            if edge not in edges:
+                edges.append(edge)
         try:
             # iterate over until we get all of the edges
-            while len(edgelist) != self.num_edges():
-                for order in edgelist[-1].orders():
+            while len(edges) != self.num_edges():
+                for order in edges[-1].orders():
                     for edge in self.get_edges(order):
-                        if edge not in edgelist:
-                            edgelist.append(edge)
- 
+                        if edge not in edges:
+                            edges.append(edge)
+
         except Exception as e:
             print(e)
             time.sleep(3)
             raise Exception('ex')
-            
 
-        return edgelist
+        return edges
 
     def get_edges(self, o):
         """ Return a list of all edges incident on v.

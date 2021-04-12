@@ -8,14 +8,14 @@ SPEED = 3
 
 class Order:
 
-    def __init__(self, id, user, coords, scheduled_time, size):
+    def __init__(self, id, user, coords, scheduled_time, size): 
 
         self._id = id
         self._uid = random.randint(0,1000)
         self._coords = coords
-        self._distance = sqrt((DEPOT_COORDS[0] - self._coords[0])**2 + (DEPOT_COORDS[1] - self._coords[1])**2)
+        self._distance_to_depot = sqrt((DEPOT_COORDS[0] - self._coords[0])**2 + (DEPOT_COORDS[1] - self._coords[1])**2)
         self._scheduled_time = scheduled_time
-        self._slack = scheduled_time - (datetime.timedelta(hours=9) + datetime.timedelta(minutes=round(self._distance / SPEED)))
+        #self._slack = scheduled_time - (datetime.timedelta(hours=9) + datetime.timedelta(minutes=round(self._distance / SPEED)))
         self._seed = False
 
     def __str__(self):
@@ -51,16 +51,8 @@ class Order:
         self._scheduled_time = scheduled_time
 
     @property
-    def distance(self):
-        return self._distance
-
-    @property
-    def slack(self):
-        return self._slack
-
-    @slack.setter
-    def slack(self, slack):
-        self._slack = slack
+    def distance_to_depot(self):
+        return self._distance_to_depot
 
     @property
     def seed(self):
