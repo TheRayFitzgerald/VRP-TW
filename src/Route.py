@@ -138,22 +138,15 @@ class Route:
 
         return sqrt((o1.coords[0] - o2.coords[0])**2 + (o1.coords[1] - o2.coords[1])**2)
 
-    def order_is_reachable(route, order, flip_direction=False):
+    def order_is_reachable(self, order, edges):
         total_time = 0
-
-        edges = route.edges_in_order_undirected()
-        if flip_direction:
-            edges.reverse()
-
-        #print('-- Order: %i' % order.order.id)
-        #print(edges)
         
         for edge in edges:
             #print(edge)
             start = edge.start()
             end = edge.end()
 
-            total_time += route.get_distance_between_orders(start, end) / SPEED
+            total_time += self.get_distance_between_orders(start, end) / SPEED
 
             if start == order or end == order:
                 break
@@ -181,9 +174,10 @@ class Route:
         edges = self.edges_in_order_undirected()
     
         for order in self.orders()[1:]:
-            if not self.order_is_reachable(order):
+            if not self.order_is_reachable(order, edges):
+                edges.reverse()
                 for order in self.orders()[1:]:
-                    if not self.order_is_reachable(order, True):
+                    if not self.order_is_reachable(order, edges):
                         sys.exit('INFEASIBLE ROUTE')
                 edges.reverse()
                 break
@@ -191,10 +185,17 @@ class Route:
         return edges
 
     def is_feasible(self):
-        
-        if len(self.edges_in_order()) == len(self.edges()):
-            return True
-        return False
+
+        edges = self.edges_in_order_undirected()
+    
+        for order in self.orders()[1:]:
+            if not self.order_is_reachable(order, edges):
+                edges.reverse()
+                for order in self.orders()[1:]:
+                    if not self.order_is_reachable(order, edges):
+                        return False
+                
+        return True
 
     def edges_in_order_undirected(self):
         """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """

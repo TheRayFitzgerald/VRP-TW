@@ -353,7 +353,7 @@ def main_routing(routes, unscheduled_orders):
                     distance_to_o2 = distance_to_order(route, o2)
                     # add order to route and check if route is still fully feasible
                     route.add_order_between_orders(order, o1, o2)
-                    if route_is_feasible(route):
+                    if route.is_feasible;
 
                         d3 = route.get_distance_between_orders(o1, o2)
                         d1 = get_distance_between_orders(o1, order)
