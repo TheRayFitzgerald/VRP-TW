@@ -2,13 +2,13 @@ from Order import Order
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
-from grahamscan import GrahamScan
-from Graph import Graph, Vertex
+from Route import Route
 from read_config import read_config
 import matplotlib.pyplot as plt
 import random, operator, time, copy, pickle, datetime, math, sys
 import numpy as np
 from collections import Counter
+
 #from py2opt.routefinder import RouteFinder
 #from VRPTW.routefinder.py2opt.py2opt.routefinder import RouteFinder
 
@@ -50,10 +50,53 @@ def is_completed_route2(route):
     else:
         print('Incomplete Route')
 
+def clean_routes(routes):
+
+    # remove any empty routes
+    routes = [route for route in routes if route.num_orders() > 1]
+
+    for route in routes:
+        route.complete_route()
+
+    return routes
+
+def distance_to_order(route, order):
+
+    total_distance = 0
+    edges = route.edges_in_order()
+
+    for edge in edges:
+
+        start = edge.start()
+        end = edge.end()
+
+        total_distance += route.get_distance_between_orders(start, end)
+
+        if start == order or end == order:
+            break
+
+    return total_distance
+
+def route_direction(route):
+
+    if route.num_orders() <= 1:
+        return None
+
+    edges = route.edges_in_order()
+    for order in route.orders()[1:]:
+        if not order_is_reachable(route, order):
+            for order in route.orders()[1:]:
+                if not order_is_reachable(route, order, True):
+                    print('UNREACHABLE')
+                    sys.exit('UNREACHABLE ROUTE')
+            edges.reverse()
+            break
+    route_directed_edges[route] = edges
+
 def order_is_reachable(route, order, flip_direction=False):
     total_time = 0
 
-    edges = route.edges_in_order()
+    edges = route.edges_in_order_undirected()
     if flip_direction:
         edges.reverse()
 
@@ -65,7 +108,7 @@ def order_is_reachable(route, order, flip_direction=False):
         start = edge.start()
         end = edge.end()
 
-        total_time += route.get_distance_between_vertices(start, end) / SPEED
+        total_time += route.get_distance_between_orders(start, end) / SPEED
 
         if start == order or end == order:
             break
@@ -73,7 +116,7 @@ def order_is_reachable(route, order, flip_direction=False):
     total_time = datetime.timedelta(minutes=total_time)
     
     # store if it is reachable or not
-    reachable = START_TIME + total_time < order.element().scheduled_time
+    reachable = START_TIME + total_time < order.scheduled_time
     '''
     print('\n########')
     print(SPEED)
@@ -89,11 +132,11 @@ def order_is_reachable(route, order, flip_direction=False):
 
 def route_is_feasible(route):
     #print('\n########')
-    #print('num vertices %i' % route.num_vertices())
-    for vertex in route.vertices()[1:]:
-        if not order_is_reachable(route, vertex):
-            for vertex in route.vertices()[1:]:
-                if not order_is_reachable(route, vertex, True):
+    #print('num vertices %i' % route.num_orders())
+    for order in route.orders()[1:]:
+        if not order_is_reachable(route, order):
+            for order in route.orders()[1:]:
+                if not order_is_reachable(route, order, True):
                     '''print('\nRoute\n')
                     print(route)
                     print('not reachable')
@@ -141,6 +184,10 @@ def get_distance_between_vertices(vertex1, vertex2):
 
     return sqrt((vertex1[0] - vertex2[0])**2 + (vertex1[1] - vertex2[1])**2)
 
+def get_distance_between_orders(o1, o2):
+
+    return sqrt((o1.coords[0] - o2.coords[0])**2 + (o1.coords[1] - o2.coords[1])**2)
+
 def get_route_distance(route):
 
     total_distance = 0
@@ -159,21 +206,60 @@ def get_overall_distance(routes):
 
     return overall_distance
 
+'''
+    Input: List of orders
+    Output: List of routes with one order(seed) in each, list of unscheduled orders
 
+    S = empty list
+    First_seed = furthest order from the depot
+    Add first seed to list of seeds S. Remove first seed from list of orders
+
+    While number of seeds is less than the maximum number of routes:
+
+        Find the order that maximises the sum of distances to the existing seeds in S
+        Add the order to the list of seeds S. Remove the order from list of orders
+
+    R = empty list
+    For each seed in the list of seeds S:
+        Create a new route
+        Add the seed to the route and connect it to the depot
+        Add this route to the list of routes R
+
+    Return: R, Orders
+'''
 def route_initialization(orders):
-    print('sds')
-    print(orders)
-    orders.sort(key=lambda x: x.distance, reverse=True)
 
-    S = orders[:MAX_NUMBER_OF_ROUTES]
-    orders = orders[MAX_NUMBER_OF_ROUTES:]
+    S = list()
+
+    first_seed = max(orders, key=attrgetter('distance_to_depot'))
+    S.append(first_seed)
+
+    orders.remove(first_seed)
+
+    while len(S) < MAX_NUMBER_OF_ROUTES:
+
+        # find order that maximises sum of distances from existing seeds in S
+        new_seed = (None, 0)
+        for order in orders:
+            accum_distance = 0
+            for seed in S:
+                accum_distance += get_distance_between_orders(seed, order)
+            if accum_distance > new_seed[1]:
+                new_seed = (order, accum_distance)
+        
+        new_seed = new_seed[0]
+
+        orders.remove(new_seed)
+        new_seed.seed = True
+        S.append(new_seed)
+
 
     routes = list()
     i = 0
     for seed in S:
-        g = Graph(i)
-        depot = g.add_vertex(Order(0, 'ray', DEPOT_COORDS, START_TIME, 0))
-        seed = g.add_vertex(seed, seed=True)
+        g = Route()
+        depot = g.add_order(Order(0, 'ray', DEPOT_COORDS, START_TIME, 0))
+        seed = g.add_order(seed)
         g.add_edge(depot, seed)
         routes.append(g)
         #routes[len(routes) - 1].add_vertex(Order(0, 'ray', DEPOT_COORDS, '00:00', '00:00', 0))
@@ -181,6 +267,8 @@ def route_initialization(orders):
 
     if not routes_are_feasible(routes):
         sys.exit('\n# Caught Errror #\nCourier speed is too low to reach seeds within their time windows.\nIncrease courier speed to create seeds.\n')
+
+
     return [routes, orders]
 
 def calculate_penalty(order, min_cost, other_routes):
@@ -211,13 +299,38 @@ def iterate_routes(routes, function):
         for order in routes:
             pass
 
+'''
+Input: List of routes, list of unscheduled orders
+Output: List of routes containing all orders
 
+While |unscheduled orders| > 0:
+
+    For each unscheduled order in the list unscheduled orders:
+        For each route:
+            Find the minimum insertion cost for the order in this route
+
+        Find the route with the lowest minimum insertion cost
+        If the order can be inserted:
+            Calculate the penalty cost for this order
+        Else:
+            Set the penalty value to infinity for this order
+
+    Select the customer with the largest penalty value
+    If the order has a feasible best insertion location:
+        Insert this order into its insertion location
+    Else if the order does not habe a feasible best insertion location:
+        Create a new dedicated route for this order
+        Add the order to the new route
+
+Return: Complete Routes
+'''
 def main_routing(routes, unscheduled_orders):
 
     # find the min insertion cost and the best route
     print('\n######\nMain Routing\n######\n')
 
     while(len(unscheduled_orders) > 0):
+
         if not routes_are_feasible(routes):
             print('not feasible')
             for route in routes:
@@ -234,19 +347,19 @@ def main_routing(routes, unscheduled_orders):
 
                 for edge in route.edges():
                     
-                    start = edge.start()
-                    end = edge.end()
-                    order_v = route.add_vertex(order)
-
+                    o1 = edge.start()
+                    o2 = edge.end()
+                    order = route.add_order(order)
+                    distance_to_o2 = distance_to_order(route, o2)
                     # add order to route and check if route is still fully feasible
-                    route.add_vertex_between_vertices(order_v, start, end)
-                    if route_is_feasible(route):
+                    route.add_order_between_orders(order, o1, o2)
+                    if route.is_feasible():
 
-                        d3 = route.get_distance_between_vertices(start, end)
-                        d1 = get_distance_between_vertices(start.order.coords, order.coords)
-                        d2 = get_distance_between_vertices(order.coords, end.order.coords)
+                        d3 = route.get_distance_between_orders(o1, o2)
+                        d1 = get_distance_between_orders(o1, order)
+                        d2 = get_distance_between_orders(order, o2)
 
-                        cost = d1 + d2 - d3
+                        cost = d1 + d2 - d3 + (distance_to_order(route, o2) - distance_to_o2)
                         
                         # get the optimum route and its associated cost.
                         if route_cost_penalty == None or cost < route_cost_penalty[1]:
@@ -257,7 +370,7 @@ def main_routing(routes, unscheduled_orders):
                             min_cost_for_route = cost
 
                     # remove order to preserve routes original state
-                    route.remove_vertex_and_repair(order_v)
+                    route.remove_order_and_repair(order)
 
                 # if the order is not insertable in a route, set it to a very high value
                 if min_cost_for_route == None:
@@ -302,33 +415,34 @@ def main_routing(routes, unscheduled_orders):
         try:
             if added_order_rcp[1][2] != math.inf:
                 # now route this order
-                added_order = routes[routes.index(added_order_rcp[1][0])].add_vertex(added_order_rcp[0])
+                added_order = routes[routes.index(added_order_rcp[1][0])].add_order(added_order_rcp[0])
             # order cannot be added to any existing routes. Create a new dedicated route.
             else:
-                g = Graph(99)
-                depot = g.add_vertex(Order(0, 'ray', DEPOT_COORDS, START_TIME, 0))
-                added_order = g.add_vertex(added_order_rcp[0])
+                g = Route(99)
+                depot = g.add_order(Order(0, 'ray', DEPOT_COORDS, START_TIME, 0))
+                added_order = g.add_order(added_order_rcp[0])
                 g.add_edge(depot, added_order)
 
                 if not route_is_feasible(g):
-                    sys.exit('\n# Caught Errror #\nCourier speed is too low to reach some vertex on a direct path.\nIncrease courier speed to allow feasibility.\n')
+                    sys.exit('\n# Caught Errror #\nCourier speed is too low to reach some order on a direct path.\nIncrease courier speed to allow feasibility.\n')
                 else:
                     routes.append(g)
 
         except Exception as e:
-            print('Failed to add vertex')
+            print('Failed to add order')
             print(e)
             time.sleep(4)
 
         # now connect the vertex with an edge 
         try:
             if added_order_rcp[1][2] != math.inf:
+
                 w1 = added_order_rcp[1][3].start()
                 w2 = added_order_rcp[1][3].end()
-                added = routes[routes.index(added_order_rcp[1][0])].add_vertex_between_vertices(added_order, w1, w2)
+                added = routes[routes.index(added_order_rcp[1][0])].add_order_between_orders(added_order, w1, w2)
 
         except Exception as e:
-            print('Failed to add edge between vertices')
+            print('Failed to add edge between orders')
             print(e)
             time.sleep(4)
         
@@ -338,8 +452,8 @@ def main_routing(routes, unscheduled_orders):
             print(e)
             time.sleep(4)
 
-    for route in routes:
-        route.complete_route()
+    clean_routes(routes)
+
     return routes
 
 # takes routes and utilises 2-opt to imrpove the routes
@@ -407,17 +521,17 @@ def cost_of_break(order, route):
 
     if len(original_edges) > 1:
 
-        v1 = original_edges[0].opposite(order)
-        v2 = original_edges[1].opposite(order)
+        o1 = original_edges[0].opposite(order)
+        o2 = original_edges[1].opposite(order)
 
         
-        d1 = route.get_distance_between_vertices(v1, order)
-        d2 = route.get_distance_between_vertices(order, v2)
+        d1 = route.get_distance_between_orders(o1, order)
+        d2 = route.get_distance_between_orders(order, o2)
 
-        d3 = route.get_distance_between_vertices(v1, v2)
+        d3 = route.get_distance_between_orders(o1, o2)
     else:
-        v1 = original_edges[0].opposite(order)
-        d1 = route.get_distance_between_vertices(v1, order)
+        o1 = original_edges[0].opposite(order)
+        d1 = route.get_distance_between_orders(o1, order)
         d2 = d1
         # depot to depot
         d3 = 0
@@ -456,31 +570,31 @@ def two_opt_ls_iterator(routes, n_rounds):
 
 def local_search_tw_shuffle_iterator(routes, graph_results=True):
 
-    open('num_vertices.txt', 'w').close()
-    num_vertices = 0
+    open('num_orders.txt', 'w').close()
+    num_orders = 0
     for route in routes:
-        num_vertices += route.num_vertices() - 1
-    with open("num_vertices.txt", "a") as f:
-        f.write("Initial: %i\n" % num_vertices)
+        num_orders += route.num_orders() - 1
+    with open("num_orders.txt", "a") as f:
+        f.write("Initial: %i\n" % num_orders)
         f.write("Initial: %i\n" % get_overall_distance(routes))
 
     timeout = time.time() + 100
     best_distance = get_overall_distance(routes)
     convergence_counter = 0
+    iteration_counter = 0
     while True:
+        
         # Local Search
-        routes = local_search_tw(routes)[0]
-        if graph_results:
-            plot_routes(routes, "Local Search w/ TW")
-        num_vertices = 0
+        routes = local_search(routes)[0]
+        num_orders = 0
         for route in routes:
-            num_vertices += route.num_vertices() - 1
+            num_orders += route.num_orders() - 1
 
-        with open("num_vertices.txt", "a") as f:
-            f.write("LS\n%i\n" % num_vertices)
+        with open("num_orders.txt", "a") as f:
+            f.write("LS\n%i\n" % num_orders)
             f.write("%i\n" % get_overall_distance(routes))
 
-        if num_vertices != NUMBER_OF_ORDERS:
+        if num_orders != NUMBER_OF_ORDERS:
             print('Local Search has lost vertices')
             time.sleep(3)
             return routes
@@ -491,19 +605,19 @@ def local_search_tw_shuffle_iterator(routes, graph_results=True):
 
         # TW Shuffle        
         routes, failed_vertices = tw_shuffle(routes)
-        num_vertices = 0
+        num_orders = 0
         for route in routes:
-            num_vertices += route.num_vertices() - 1
+            num_orders += route.num_orders() - 1
 
-        with open("num_vertices.txt", "a") as f:
-            f.write("Shuffle\n%i\n" % num_vertices)
+        with open("num_orders.txt", "a") as f:
+            f.write("Shuffle\n%i\n" % num_orders)
             f.write("%i\n" % get_overall_distance(routes))
             f.write(str(failed_vertices) + "\n")
             f.write("Convergence Counter: " + str(convergence_counter) + "\n")
 
-        if num_vertices != NUMBER_OF_ORDERS:
+        if num_orders != NUMBER_OF_ORDERS:
             print('TW Shuffle has lost vertices')
-            print(num_vertices)
+            print(num_orders)
             print(failed_vertices)
             time.sleep(3)
             return routes
@@ -512,12 +626,19 @@ def local_search_tw_shuffle_iterator(routes, graph_results=True):
             print('TW Shuffle has caused infeasibility')
             time.sleep(3)
             return routes
-        
+
+
         if get_overall_distance(routes) == best_distance:
             convergence_counter += 1
         elif get_overall_distance(routes) < best_distance:
+
             best_distance = get_overall_distance(routes)
             convergence_counter = 0
+
+            iteration_counter += 1
+            if graph_results:
+                plot_routes(routes, "Improvement Round %i" % iteration_counter)
+
 
         if convergence_counter >= CONVERGENCE_COUNTER:
             break
@@ -529,12 +650,12 @@ def local_search_tw_shuffle_iterator(routes, graph_results=True):
 
 def local_search_tw_shuffle_iterator2(routes):
 
-    open('num_vertices.txt', 'w').close()
-    num_vertices = 0
+    open('num_orders.txt', 'w').close()
+    num_orders = 0
     for route in routes:
-        num_vertices += route.num_vertices() - 1
-    with open("num_vertices.txt", "a") as f:
-        f.write("Initial: %i\n" % num_vertices)
+        num_orders += route.num_orders() - 1
+    with open("num_orders.txt", "a") as f:
+        f.write("Initial: %i\n" % num_orders)
         f.write("Initial: %i\n" % get_overall_distance(routes))
 
     timeout = time.time() + 100
@@ -542,18 +663,18 @@ def local_search_tw_shuffle_iterator2(routes):
     convergence_counter = 0
     while True:
         # Local Search
-        routes = local_search_tw(routes)[0]
+        routes = local_search(routes)[0]
 
         plot_routes(routes, "Local Search w/ TW")
-        num_vertices = 0
+        num_orders = 0
         for route in routes:
-            num_vertices += route.num_vertices() - 1
+            num_orders += route.num_orders() - 1
 
-        with open("num_vertices.txt", "a") as f:
-            f.write("LS\n%i\n" % num_vertices)
+        with open("num_orders.txt", "a") as f:
+            f.write("LS\n%i\n" % num_orders)
             f.write("%i\n" % get_overall_distance(routes))
 
-        if num_vertices != NUMBER_OF_ORDERS:
+        if num_orders != NUMBER_OF_ORDERS:
             print('Local Search has lost vertices')
             time.sleep(3)
             return routes
@@ -571,7 +692,7 @@ def local_search_tw_shuffle_iterator2(routes):
         if convergence_counter >= CONVERGENCE_COUNTER:
             break
 
-    with open("num_vertices.txt", "a") as f:
+    with open("num_orders.txt", "a") as f:
             f.write("\n\n######################\n\n")
 
 
@@ -582,19 +703,19 @@ def local_search_tw_shuffle_iterator2(routes):
 
         # TW Shuffle        
         routes, failed_vertices = tw_shuffle(routes)
-        num_vertices = 0
+        num_orders = 0
         for route in routes:
-            num_vertices += route.num_vertices() - 1
+            num_orders += route.num_orders() - 1
 
-        with open("num_vertices.txt", "a") as f:
-            f.write("Shuffle\n%i\n" % num_vertices)
+        with open("num_orders.txt", "a") as f:
+            f.write("Shuffle\n%i\n" % num_orders)
             f.write("%i\n" % get_overall_distance(routes))
             f.write(str(failed_vertices) + "\n")
             f.write("Convergence Counter: " + str(convergence_counter) + "\n")
 
-        if num_vertices != NUMBER_OF_ORDERS:
+        if num_orders != NUMBER_OF_ORDERS:
             print('TW Shuffle has lost vertices')
-            print(num_vertices)
+            print(num_orders)
             print(failed_vertices)
             time.sleep(3)
             return routes
@@ -619,38 +740,59 @@ def local_search_tw_shuffle_iterator2(routes):
     best_distance = get_overall_distance(routes)
 
     return routes
+'''
+Input: list of routes
 
+Improved_routes = empty list
+
+For each route in routes
+    create a new blank route 'improved_route'
+    make a copy of all of the routes vertices and shuffle it
+    add the depot and the first vertex from the shuffle vertices to the new route
+    connect these two vertices with an edge
+
+    for each vertex in shuffled vertices
+        find the best feasible location for the vertex in the partially built route 'improved_route'
+        if feasible location found:
+            add the vertex to improved_route
+        if feasible location not found:
+            break out of loop and preserve the original route
+
+    add improved route to list 'improved routes'
+
+Return: improved_routes
+'''
 def tw_shuffle(routes):
 
-    failed_vertices = list()
+    failed_orders = list()
     improved_routes = list()
     for route in routes:
-        if route.num_vertices() <= 2:
+        if route.num_orders() <= 2:
             improved_routes.append(route)
         else:
             
-            failed_vertices_for_route = list()
+            failed_orders_for_route = list()
 
             # create a new improved route with abritrary ID
             # this improved route will be used to record changes for all vertices for this given route.
-            improved_route = Graph('4')
+            improved_route = Route()
 
-            shuffled_vertices = route.vertices()[1:]
-            random.shuffle(shuffled_vertices)
-            if len(shuffled_vertices) != len(route.vertices()[1:]):
-                print(route.vertices()[1:])
-                print(shuffled_vertices)
+            shuffled_orders = route.orders()[1:]
+            random.shuffle(shuffled_orders)
+            if len(shuffled_orders) != len(route.orders()[1:]):
+                print(route.orders()[1:])
+                print(shuffled_orders)
                 time.sleep(6)
 
             # add the depot to the start of the improved route
-            d0 = improved_route.add_existing_vertex(route.vertices()[0])
+            d0 = improved_route.add_order(route.orders()[0])
             # add the first vertex from the shuffled vertices to begin
-            d1 = improved_route.add_existing_vertex(shuffled_vertices.pop(0))
+            d1 = improved_route.add_order(shuffled_orders.pop(0))
             # connect the first vertex to the depot
             improved_route.add_edge(d0, d1)
             
             # continue until all shuffled vertices have been assigned.
-            for vertex in shuffled_vertices:
+            for order in shuffled_orders:
 
                 # create a list to record all feasible routes for this vertex.
                 feasible_routes = list()
@@ -659,7 +801,7 @@ def tw_shuffle(routes):
                     
                     start = edge.start()
                     end = edge.end()
-                    improved_route.add_vertex_between_vertices(vertex, start, end)
+                    improved_route.add_order_between_orders(order, start, end)
                     '''
                     print('$$$$ ORIGINAL $$$$\n')
                     print(route)
@@ -675,10 +817,10 @@ def tw_shuffle(routes):
                     '''
                     # check if route is feasible: all orders in route are reachable within their TW's.
                     if route_is_feasible(improved_route):
-                        # add route to list of all feasible routes for this vertex
+                        # add route to list of all feasible routes for this order
                         feasible_routes.append(copy.deepcopy(improved_route))
                     # undo changes
-                    improved_route.remove_vertex_and_repair(vertex)
+                    improved_route.remove_order_and_repair(order)
                     
                 # all feasible routes have now been recorded
                 # iterate through all feasible routes to find the cheapest
@@ -699,7 +841,7 @@ def tw_shuffle(routes):
                     print(feasible_routes)
                     
                     print(e)
-                    failed_vertices_for_route.append(vertex)
+                    failed_orders_for_route.append(order)
                     #time.sleep(5)
                     route.complete_route()
                     improved_routes.append(route)
@@ -710,16 +852,16 @@ def tw_shuffle(routes):
             improved_route.complete_route()
             route.complete_route()
             # record the finalised improved route
-            if improved_route.num_vertices() != route.num_vertices() or get_route_distance(improved_route) > get_route_distance(route):
+            if improved_route.num_orders() != route.num_orders() or get_route_distance(improved_route) > get_route_distance(route):
                 print('\nOriginal')
                 print(route)
-                print(route.vertices()[1:])
+                print(route.orders()[1:])
                 print('\nImproved')
                 print(improved_route)
-                print(improved_route.vertices()[1:])
+                print(improved_route.orders()[1:])
                 #print('Original feasible')
                 #print(route_is_feasible(route))
-                if improved_route.num_vertices() != route.num_vertices():
+                if improved_route.num_orders() != route.num_orders():
                     print('LOST VERTICES\n')
                 elif get_route_distance(improved_route) > get_route_distance(route):
                     
@@ -735,17 +877,17 @@ def tw_shuffle(routes):
                 continue
 
             
-            failed_vertices.append(failed_vertices_for_route)
-    for vertex_set in failed_vertices:
-        if vertex_set:
+            failed_orders.append(failed_orders_for_route)
+    for order_set in failed_orders:
+        if order_set:
             print('###')
-            print(vertex_set)
+            print(order_set)
             print('###')
 
     if len(improved_routes) > 0:
         for i in range(len(improved_routes)):
             try:
-                if improved_routes[i].num_vertices() != routes[i].num_vertices() \
+                if improved_routes[i].num_orders() != routes[i].num_orders() \
                     or get_route_distance(improved_routes[i]) > get_route_distance(routes[i]):
                     '''
                     print('BAD CAUGHT')
@@ -760,13 +902,30 @@ def tw_shuffle(routes):
                 print(e)
                 time.sleep(4)
                         
-    return improved_routes, failed_vertices
+    return improved_routes, failed_orders
 
+'''
+Input: List of routes, R
+Output: List of routes
 
-def local_search_tw(routes):
+For each route r in R:
+    For each order in r:
+        For every possible insertion point p in neighbouring routes:
+            Calculate the cost of inserting this order at p
+            Monitor & Record the insertion point with the lowest insertion cost, b
+
+        If moving the order to b lowers the overall routes distance:
+            Move the order and update R
+        Else:
+            Preserve the orders location.
+
+Return: R
+'''
+
+def local_search(routes):
 
     if not routes_are_feasible(routes):
-        sys.exit('\n# local_search_tw given bad input. #\n')
+        sys.exit('\n# local_search given bad input. #\n')
 
     local_search_actioned = False
 
@@ -778,14 +937,14 @@ def local_search_tw(routes):
 
     for i, origin_route in enumerate(shuffled_routes): 
         
-        shuffled_vertices = origin_route.vertices()[1:]
-        random.shuffle(shuffled_vertices)
+        shuffled_orders = origin_route.orders()[1:]
+        random.shuffle(shuffled_orders)
 
         if not routes_are_feasible(shuffled_routes):
             sys.exit('\n1\n')
-        for order in shuffled_vertices:
+        for order in shuffled_orders:
             if not routes_are_feasible(shuffled_routes):
-                print(shuffled_vertices)
+                print(shuffled_orders)
                 print(order)
                 print('\ns\n')
                 return (shuffled_routes, local_search_actioned)
@@ -819,11 +978,11 @@ def local_search_tw(routes):
                     print('Distance: %f' % get_route_distance(improved_other_route))
                 
                     print('\n----- Origin -----')
-                    print('Route: %s, Order: %i' % (colors[i % 7], order.element().id))
+                    print('Route: %s, Order: %i' % (colors[i % 7], order.id))
                     print('------------------')
 
                     print('\n----- Destination -----')
-                    print('Route: %s, Order: %i <-> %i' % (colors[shuffled_routes.index(other_routes[j]) % 7], start.element().id, end.element().id))
+                    print('Route: %s, Order: %i <-> %i' % (colors[shuffled_routes.index(other_routes[j]) % 7], start.id, end.id))
                     print('-----------------------\n')
                     
                     if not routes_are_feasible(shuffled_routes):
@@ -839,7 +998,7 @@ def local_search_tw(routes):
                     #print(origin_route)
 
                     # add the vertex to the destination route between the edge vertices being considered
-                    improved_other_route.add_vertex_between_vertices(order, start, end)
+                    improved_other_route.add_order_between_orders(order, start, end)
                     if not routes_are_feasible(shuffled_routes):
                         sys.exit('\n2.5\n')
 
@@ -862,15 +1021,17 @@ def local_search_tw(routes):
                         if route_is_feasible(improved_other_route) and (best_new_position_route == None or \
                         route_distance_difference(improved_other_route, other_routes[j]) < route_distance_difference(best_new_position_route[0], other_routes[best_new_position_route[1]])):
                             
-                            best_new_position_route = [copy.deepcopy(improved_other_route), j, start.element().uid, end.element().uid]
+                            best_new_position_route = [copy.deepcopy(improved_other_route), j, start.uid, end.uid]
                         
                         # make reparations 
-                        improved_other_route.remove_vertex_and_repair(order)
+                        improved_other_route.remove_order_and_repair(order)
                         #print(improved_other_route)
                         #print('Distance: %f' % get_route_distance(improved_other_route))
                         #print('$$$$ END $$$$\n')
                     except Exception as e:
                         print(e)
+                        print("error on feasibility")
+                        time.sleep(10)
                         plot_routes(routes, "error on feasibility")
                         time.sleep(10)
                         plt.show()
@@ -890,20 +1051,20 @@ def local_search_tw(routes):
                     if not routes_are_feasible(shuffled_routes):
                         sys.exit('\n# start. #\n')
                         pass
-                    shuffled_routes[i].remove_vertex_and_repair(order)
-                    shuffled_vertices.remove(order)
+                    shuffled_routes[i].remove_order_and_repair(order)
+                    shuffled_orders.remove(order)
 
                     #-------------------------------
                     # get the index for the destination route in shuffled_routes.
                     r_index = shuffled_routes.index(other_routes[best_new_position_route[1]])
                     
-                    start = shuffled_routes[r_index].get_vertex_by_uid(best_new_position_route[2])
-                    end = shuffled_routes[r_index].get_vertex_by_uid(best_new_position_route[3])
+                    start = shuffled_routes[r_index].get_order_by_uid(best_new_position_route[2])
+                    end = shuffled_routes[r_index].get_order_by_uid(best_new_position_route[3])
                     
                     # Add order to destination route
-                    shuffled_routes[r_index].add_vertex_between_vertices(order, start, end)
+                    shuffled_routes[r_index].add_order_between_orders(order, start, end)
                     if not routes_are_feasible(shuffled_routes):
-                        #sys.exit('\n# local_search_tw given bad input. #\n')
+                        #sys.exit('\n# local_search given bad input. #\n')
                         pass
                     
                 except Exception as e:
@@ -928,6 +1089,7 @@ def local_search_tw(routes):
 
 def grasp(orders, graph_results=True):
 
+    
     # route initilization
     routes, unscheduled_orders = route_initialization(orders)    
 
@@ -938,20 +1100,19 @@ def grasp(orders, graph_results=True):
         sys.exit('infeasible routes')
         
     if graph_results:
-        plot_routes(routes, "main routing 1")
+        plot_routes(routes, "Initial Route Construction")
    
     routes = local_search_tw_shuffle_iterator(routes, graph_results)
 
-    if graph_results:
-        plot_routes(routes, "Iterator")
-        plt.show()
+    routes = clean_routes(routes)
+
     return routes
    
 
 def set_id_by_position(routes):
     for route in routes:
         for pos, order in enumerate(route.vertices()):
-            order.element().id = pos
+            order.id = pos
     
     return routes
     
@@ -961,18 +1122,20 @@ def plot_routes(routes, title="untitled", labeled=True):
 
     fig = plt.figure()
     plt.suptitle(title, fontsize=20)
-    ax = fig.add_subplot(111)
 
     P = list()
-    C = list()
+    #C = list()
     for route in routes:
-        for order in route.vertices():
-            P.append(order.element().coords)
-            # time_to_delivery = datetime.timedelta(hours=9) - order.order.scheduled_time
-            C.append(np.cos(order.order.slack.total_seconds()))
+        for order in route.orders():
+            if not order.seed:
+                P.append(order.coords)
+                #C.append(np.cos(order.slack.total_seconds()))
+            else:
+                plt.plot(order.coords[0], order.coords[1], 'sk')
+            
             if labeled:
-                plt.annotate(order.element().id, (order.element().coords[0], order.element().coords[1]))
-    plt.scatter(*zip(*P), c=C)
+                plt.annotate(order.id, (order.coords[0], order.coords[1]))
+    plt.scatter(*zip(*P))
     # plt.legend()
     #plt.scatter(*zip(*P))
     P = np.array(P)
@@ -982,15 +1145,17 @@ def plot_routes(routes, title="untitled", labeled=True):
     #plt.plot([P[-1,0],P[0,0]],[P[-1,1],P[0,1]], 'b-', picker=5)
     #plt.plot(P[:,0],P[:,1], 'b')
     plt.plot(DEPOT_COORDS[0], DEPOT_COORDS[1], '*g')
+
+
     
     i = 0
     
     for route in routes:
         for edge in route.edges():
-            vertices = edge.vertices()
+            orders = edge.orders()
             try:
-                x_values = [vertices[0].element().coords[0], vertices[1].element().coords[0]]
-                y_values = [vertices[0].element().coords[1], vertices[1].element().coords[1]]
+                x_values = [orders[0].coords[0], orders[1].coords[0]]
+                y_values = [orders[0].coords[1], orders[1].coords[1]]
             except AttributeError:
                 x_values = [vertices[0].element()[0], vertices[1].element()[0]]
                 y_values = [vertices[0].element()[1], vertices[1].element()[1]]
@@ -1004,18 +1169,10 @@ def plot_routes(routes, title="untitled", labeled=True):
     #plt.axis('off')
     route_directed_edges = dict()
     for route in routes:
-        if route.num_vertices() <= 1:
+        if route.num_orders() <= 1:
             break
 
-        edges = route.edges_in_order()
-        for vertex in route.vertices()[1:]:
-            if not order_is_reachable(route, vertex):
-                for vertex in route.vertices()[1:]:
-                    if not order_is_reachable(route, vertex, True):
-                        print('UNREACHABLE')
-                        sys.exit('UNREACHABLE ROUTE')
-                edges.reverse()
-                break
+        edges = route.edges_in_order_undirected()
         route_directed_edges[route] = edges
     
     for route, edges in route_directed_edges.items():
@@ -1023,7 +1180,7 @@ def plot_routes(routes, title="untitled", labeled=True):
         print(colors[routes.index(route) % 7])
         print('-----------------\n')
 
-        print([edge.vertices() for edge in edges])
+        print([edge.orders() for edge in edges])
         print('\n')
     
 def plot_convex_hull(orders, L, colour):
@@ -1081,13 +1238,19 @@ if __name__ == '__main__':
     print(NUMBER_OF_ORDERS)
 
     start = time.time()
-    routes_1 = grasp(orders, False)
+    routes_1 = grasp(orders, GRAPH_ROUTES)
     routes_1_time = round(time.time() - start, 3)
     routes_1_distance = round(get_overall_distance(routes_1), 3)
     print('Disatance')
     print(routes_1_distance)
 
+    if GRAPH_ROUTES:
+        plot_routes(routes_1)
+        plt.show()
+
+
     '''
+
     with open('../saved_routes/routes_13.pkl', 'rb') as input:
         routes_original = pickle.load(input)
     routes_original = [route for route in routes_original if route.num_edges() > 0]
@@ -1095,26 +1258,26 @@ if __name__ == '__main__':
     plot_routes(routes_original, "Base")
 
     plt.show()
-    original_num_vertices=0
+    original_num_orders=0
 
     for route in routes_original:
-        original_num_vertices += route.num_vertices() - 1
+        original_num_orders += route.num_orders() - 1
     
     #routes = two_opt_route_improve_2(routes_original)
     #print(routes)
     #time.sleep(30)
     routes = local_search_tw_shuffle_iterator(routes_original)
 
-    num_vertices=0
+    num_orders=0
     for route in routes:
-        num_vertices += route.num_vertices() - 1
+        num_orders += route.num_orders() - 1
     print('ORIG NUM VERTICES')
-    print(original_num_vertices)
+    print(original_num_orders)
     print('FEASIBLE')
     print(routes_are_feasible(routes_original))
 
     print('NUM VERTICES')
-    print(num_vertices)
+    print(num_orders)
     
     print('FEASIBLE')
     print(routes_are_feasible(routes))

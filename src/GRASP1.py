@@ -309,6 +309,7 @@ def main_routing(routes, unscheduled_orders):
         for order in unscheduled_orders:
             route_cost_penalty = None
             min_cost_for_routes = dict()
+            all_costs = list()
 
             for route in routes:
                 min_cost_for_route = None
@@ -327,8 +328,8 @@ def main_routing(routes, unscheduled_orders):
                         d1 = get_distance_between_orders(o1, order)
                         d2 = get_distance_between_orders(order, o2)
 
-                        cost = (d1 + d2 - d3) + (distance_to_order(route, o2) - distance_to_o2)
-                        
+                        cost = (d1 + d2 - d3)
+                        all_costs.append(cost)
                         # get the optimum route and its associated cost.
                         if route_cost_penalty == None or cost < route_cost_penalty[1]:
                             route_cost_penalty = [route, cost, 0, edge]
@@ -351,23 +352,22 @@ def main_routing(routes, unscheduled_orders):
             # now caculate the penalty using the best cost for other routes
             # penalty is the sum of the best costs routes besides it's optimum insertion route.
             if route_cost_penalty:
-                for route, min_cost_for_route in min_cost_for_routes.items():
-                    # TypeError: 'NoneType' object is not subscriptable
-                    # route is not initialised because no feasibility
-                    if route != route_cost_penalty[0]:
-                        try:
-                            route_cost_penalty[2] += min_cost_for_route
-                        except Exception as e:
-                            print(e)
-                            print('\nDICT')
-                            print(min_cost_for_routes)
-                            print('\nItem in iter')
-                            print(min_cost_for_route)
-                            print('\nRoute in iter')
-                            print(route)
-                            print('\nroute_cost_penalty[0]')
-                            print(route_cost_penalty[0])
-                            time.sleep(5)
+                all_costs.sort(reverse=True)
+
+                for i in range(3):
+                    try:
+                        route_cost_penalty[2] += all_costs.pop()
+                    except Exception as e:
+                        print(e)
+                        print('\nDICT')
+                        print(min_cost_for_routes)
+                        print('\nItem in iter')
+                        print(min_cost_for_route)
+                        print('\nRoute in iter')
+                        print(route)
+                        print('\nroute_cost_penalty[0]')
+                        print(route_cost_penalty[0])
+                        time.sleep(5)
             # cannot be feasibly inserted into any route
             # therefore, set penalty to infinity.
             else:

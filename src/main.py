@@ -1,8 +1,7 @@
 from math import sqrt
 from random import random, randrange
 from operator import itemgetter, attrgetter
-from GRASP11 import grasp as grasp2, Order, plot_routes, routes_are_feasible, get_overall_distance
-from GRASP1 import grasp as grasp1
+from GRASP import grasp as grasp, Order, plot_routes, routes_are_feasible, get_overall_distance
 from read_config import read_config
 import matplotlib.pyplot as plt
 import random, pickle, datetime, time, os, sys, json, copy
@@ -10,8 +9,8 @@ import random, pickle, datetime, time, os, sys, json, copy
 
 results = dict()
 
-results['runtimes'] = list()
-results['distances'] = list()
+#results['runtimes'] = list()
+#results['distances'] = list()
 #results['num_seed_routes'] = list()
 #results['total_num_routes'] = list()
 #results['winners'] = list()
@@ -40,19 +39,25 @@ def main():
 
         orders_1 = create_orders(NUMBER_OF_ORDERS)
         orders_2 = copy.deepcopy(orders_1)
+        orders_3 = copy.deepcopy(orders_1)
 
         start = time.time()
-        routes_1 = grasp1(orders_1, GRAPH_STEPS)
+        routes_1 = grasp1(orders_1, False)
         routes_1_time = round(time.time() - start, 3)
         routes_1_distance = round(get_overall_distance(routes_1), 3)
 
         start = time.time()
-        routes_2 = grasp2(orders_2, GRAPH_STEPS)
+        routes_2 = grasp2(orders_2, False)
         routes_2_time = round(time.time() - start, 3)
         routes_2_distance = round(get_overall_distance(routes_2), 3)
+
+        start = time.time()
+        routes_3 = grasp3(orders_3, False)
+        routes_3_time = round(time.time() - start, 3)
+        routes_3_distance = round(get_overall_distance(routes_3), 3)
         
-        results['runtimes'].append([routes_1_time, routes_2_time])
-        results['distances'].append([routes_1_distance, routes_2_distance])
+        results['runtimes'].append([routes_1_time, routes_2_time, routes_3_time])
+        results['distances'].append([routes_1_distance, routes_2_distance, routes_3_distance])
 
         enablePrint()
 
@@ -174,9 +179,9 @@ def main3():
     orders = create_orders(NUMBER_OF_ORDERS)
 
     start = time.time()
-    routes_1 = grasp2(orders, True)
-    routes_1_time = round(time.time() - start, 3)
-    routes_1_distance = round(get_overall_distance(routes_1), 3)
+    routes = grasp(orders, True)
+    routes_time = round(time.time() - start, 3)
+    routes_distance = round(get_overall_distance(routes), 3)
 
     enablePrint()         
 
@@ -185,8 +190,8 @@ def main3():
     sys.stdout.flush()
     time.sleep(0.25)
     print()
-    print('Total Runtime: %.3f Seconds' % routes_1_time)
-    print('Total Distance: %.3f Meters' % routes_1_distance)
+    print('Total Runtime: %.3f Seconds' % routes_time)
+    print('Total Distance: %.3f Meters' % routes_distance)
 
     blockPrint()
 
@@ -256,24 +261,27 @@ def main4():
 def main5():
     order_quantities = [10, 20, 30, 40, 50, 60, 70, 80]
     #create a list of orders
-    for n_orders in order_quantities:
+    for n_orders in order_quantities[:1]:
         results[n_orders] = dict()
         results[n_orders]['runtimes'] = list()
         results[n_orders]['distances'] = list()
+        results[n_orders]['n_routes'] = list()
 
     
         for i in range(N_SAMPLES):
             blockPrint()
 
-            orders_1 = create_orders(n_orders)
+            orders = create_orders(n_orders)
 
             start = time.time()
-            routes_1 = grasp1(orders_1, False)
-            routes_1_time = round(time.time() - start, 3)
-            routes_1_distance = round(get_overall_distance(routes_1), 3)
+            routes = grasp(orders, False)
+            runtime = round(time.time() - start, 3)
+            routes_distance = round(get_overall_distance(routes), 3)
            
-            results[n_orders]['runtimes'].append(routes_1_time)
-            results[n_orders]['distances'].append(routes_1_distance)
+            results[n_orders]['runtimes'].append(runtime)
+            results[n_orders]['distances'].append(routes_distance)
+            results[n_orders]['n_routes'].append(len(routes))
+        
 
             print(results)
 
@@ -346,7 +354,7 @@ if __name__ == '__main__':
             plt.show()
             break
     '''
-    main()
+    main5()
     '''
     orders = create_orders(NUMBER_OF_ORDERS)
     routes = grasp_VRPTW(orders, False)

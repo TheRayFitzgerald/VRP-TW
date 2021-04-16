@@ -21,3 +21,12 @@
 5.
     1 = new cost
     2 = old cost
+
+6.
+    1 = Top 3 Best Alternative Insertion Points
+    2 = Top Insertion Points in Other Routes
+    3 = Best Insertion Point - Top Insertion Points in Other Routes
+
+7.
+    Measure distance, runtime, and number of routes for grasp across different numbers of orders
+    	[10, 20, 30, 40, 50, 60, 70, 80]

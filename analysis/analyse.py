@@ -2,11 +2,24 @@ import json, statistics
 
 ROUND = 2
 
-with open('results_5.json') as file:
+with open('results_7.json') as file:
     results = json.load(file)
 
 print(results)
-def main(results):
+
+def main1(results):
+
+	mean_runtimes = round(statistics.mean(results['runtimes']), ROUND)
+	mean_distances = round(statistics.mean(results['distances']), ROUND)
+	mean_n_routes = round(statistics.mean(results['n_routes']), ROUND)
+
+	print('########')
+	#print(mean_runtimes)
+	#print(mean_distances)
+	print(mean_n_routes)
+	print('########\n\n')
+
+def main2(results):
 	alg_1_runtimes = [runtime_pair[0] for runtime_pair in results['runtimes']]
 	alg_2_runtimes = [runtime_pair[1] for runtime_pair in results['runtimes']]
 
@@ -35,23 +48,33 @@ def main(results):
 	#print(total_num_routes)
 	#print(stdev_runtimes)
 
-def main2(results):
 
-	mean_runtimes = round(statistics.mean(results['runtimes']), ROUND)
-	mean_distances = round(statistics.mean(results['distances']), ROUND)
+
+
+def main3(results):
+
+	alg_1_runtimes = [runtime_pair[0] for runtime_pair in results['runtimes']]
+	alg_2_runtimes = [runtime_pair[1] for runtime_pair in results['runtimes']]
+	alg_3_runtimes = [runtime_pair[2] for runtime_pair in results['runtimes']]
+
+	alg_1_distances = [distance_pair[0] for distance_pair in results['distances']]
+	alg_2_distances = [distance_pair[1] for distance_pair in results['distances']]
+	alg_3_distances = [distance_pair[2] for distance_pair in results['distances']]
+
+
+	mean_runtimes = [round(statistics.mean(alg_1_runtimes), ROUND), round(statistics.mean(alg_2_runtimes), ROUND), round(statistics.mean(alg_3_runtimes), ROUND)]
+	mean_distances = [round(statistics.mean(alg_1_distances), ROUND), round(statistics.mean(alg_2_distances), ROUND), round(statistics.mean(alg_3_distances), ROUND)]
 
 	print(mean_runtimes)
 	print(mean_distances)
 
-
 if __name__ == '__main__':
-	main(results)
+	#main3(results)
 	
-	'''
+	
 	for result_set_key in results.keys():
 		if result_set_key != 'config':
 			print(result_set_key)
-			main2(results[result_set_key])
+			main1(results[result_set_key])
 
-	'''
     

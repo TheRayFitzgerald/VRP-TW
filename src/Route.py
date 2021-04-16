@@ -2,8 +2,10 @@ from random import randint
 from math import sqrt
 import time, datetime, sys
 from read_config import read_config
+from Order import Order
 
 START_TIME = datetime.timedelta(hours=9)
+DEPOT_COORDS = (150, 150)
 
 config_vars = read_config()
 for key,val in config_vars.items():
@@ -17,7 +19,7 @@ class Edge:
         to handle them as directed or undirected.
     """
 
-    def __init__(self, o1, o2, element):
+    def __init__(self, o1, o2):
         """ Create an edge between vertices v and w, with a data element.
 
         Element can be an arbitrarily complex structure.
@@ -26,13 +28,13 @@ class Edge:
             element - the data or label to be associated with the edge.
         """
         self._orders = (o1, o2)
-        self._element = element
+        self._distance = sqrt((o1.coords[0] - o2.coords[0])**2 + (o1.coords[1] - o2.coords[1])**2)
 
     def __str__(self):
         """ Return a string representation of this edge. """
         return ('(' + str(self._orders[0]) + '--'
                 + str(self._orders[1]) + ' : '
-                + str(self._element) + ')')
+                + str(self._distance) + ')')
 
     def __repr__(self):
         return str(self)
@@ -62,9 +64,10 @@ class Edge:
         else:
             return None
 
-    def element(self):
+    @property
+    def distance(self):
         """ Return the data element for this edge. """
-        return self._element
+        return self._distance
 
 
 class Route:
@@ -80,9 +83,15 @@ class Route:
     #    Each edge set is also maintained as a dictionary,
     #    with the opposite vertex as the key and the edge object as the value.
 
-    def __init__(self):
+    def __init__(self, order):
         """ Create an initial empty graph. """
+        # depot_to_first_order_edge
+        depot = Order(0, 'Depot', DEPOT_COORDS, START_TIME, 0)
+        e = Edge(depot, order)
         self._structure = dict()
+        self._structure[depot] = {order: e}
+        self._structure[order] = {depot: e}
+            
 
     def __str__(self):
         """ Return a string representation of the graph. """
@@ -201,6 +210,7 @@ class Route:
         """ Return a list of all edges *in order* starting and finishing at the depot in the graph. """
         
         # start by getting an edge with depot in it
+ 
         edges = [self.get_edges(self.orders()[0])[0]]
         # then add the next edge in the correct direction
         for edge in self.get_edges(edges[-1].opposite(self.orders()[0])):
@@ -334,7 +344,7 @@ class Route:
             # time.sleep(10)
             return None
 
-        e = Edge(o1, o2, self.get_distance_between_orders(o1, o2))
+        e = Edge(o1, o2)
         try:
             self._structure[o1][o2] = e
             self._structure[o2][o1] = e
