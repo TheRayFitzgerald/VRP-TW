@@ -345,3 +345,315 @@ Shuffle
 1556
 []
 Convergence Counter: 3
+LS
+50
+2002
+Shuffle
+50
+1978
+[]
+Convergence Counter: 0
+LS
+50
+1996
+Shuffle
+50
+1994
+[]
+Convergence Counter: 0
+LS
+50
+1997
+Shuffle
+61
+2630
+[]
+Convergence Counter: 0
+LS
+50
+2047
+Shuffle
+50
+1988
+[]
+Convergence Counter: 0
+LS
+50
+2031
+Shuffle
+50
+2000
+[]
+Convergence Counter: 0
+LS
+50
+2011
+Shuffle
+50
+1978
+[]
+Convergence Counter: 1
+LS
+50
+2029
+Shuffle
+50
+1978
+[]
+Convergence Counter: 0
+LS
+50
+2004
+Shuffle
+50
+1990
+[]
+Convergence Counter: 0
+LS
+50
+2043
+Shuffle
+50
+2043
+[]
+Convergence Counter: 1
+LS
+50
+2029
+Shuffle
+50
+2029
+[]
+Convergence Counter: 2
+LS
+50
+2041
+Shuffle
+50
+1952
+[]
+Convergence Counter: 3
+LS
+50
+2075
+Shuffle
+50
+2035
+[]
+Convergence Counter: 0
+LS
+50
+1956
+Shuffle
+50
+1956
+[]
+Convergence Counter: 1
+LS
+50
+2064
+Shuffle
+50
+2015
+[]
+Convergence Counter: 2
+LS
+50
+2087
+Shuffle
+50
+2046
+[]
+Convergence Counter: 3
+LS
+14
+1464
+Shuffle
+14
+1464
+[]
+Convergence Counter: 0
+LS
+14
+1464
+Shuffle
+14
+1464
+[]
+Convergence Counter: 0
+LS
+14
+1464
+Shuffle
+14
+1464
+[]
+Convergence Counter: 1
+LS
+14
+1464
+Shuffle
+14
+1464
+[]
+Convergence Counter: 2
+LS
+14
+1464
+Shuffle
+14
+1464
+[]
+Convergence Counter: 3
+LS
+14
+1395
+Shuffle
+14
+1395
+[]
+Convergence Counter: 0
+LS
+14
+1395
+Shuffle
+14
+1395
+[]
+Convergence Counter: 0
+LS
+14
+1395
+Shuffle
+14
+1395
+[]
+Convergence Counter: 1
+LS
+14
+1395
+Shuffle
+14
+1395
+[]
+Convergence Counter: 2
+LS
+14
+1395
+Shuffle
+14
+1395
+[]
+Convergence Counter: 3
+LS
+25
+1700
+Shuffle
+25
+1656
+[]
+Convergence Counter: 0
+LS
+25
+1734
+Shuffle
+25
+1710
+[]
+Convergence Counter: 0
+LS
+25
+1710
+Shuffle
+25
+1690
+[]
+Convergence Counter: 1
+LS
+25
+1693
+Shuffle
+25
+1693
+[]
+Convergence Counter: 2
+LS
+25
+1664
+Shuffle
+25
+1664
+[]
+Convergence Counter: 3
+LS
+32
+1743
+Shuffle
+32
+1741
+[]
+Convergence Counter: 0
+LS
+32
+1742
+Shuffle
+32
+1735
+[]
+Convergence Counter: 0
+LS
+32
+1732
+Shuffle
+32
+1732
+[]
+Convergence Counter: 0
+LS
+32
+1769
+Shuffle
+32
+1769
+[]
+Convergence Counter: 0
+LS
+32
+1743
+Shuffle
+32
+1731
+[]
+Convergence Counter: 1
+LS
+32
+1743
+Shuffle
+32
+1743
+[]
+Convergence Counter: 0
+LS
+32
+1748
+Shuffle
+32
+1748
+[]
+Convergence Counter: 1
+LS
+32
+1739
+Shuffle
+32
+1737
+[]
+Convergence Counter: 2
+LS
+32
+1860
+Shuffle
+32
+1749
+[]
+Convergence Counter: 3
