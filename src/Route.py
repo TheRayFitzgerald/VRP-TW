@@ -147,6 +147,23 @@ class Route:
 
         return sqrt((o1.coords[0] - o2.coords[0])**2 + (o1.coords[1] - o2.coords[1])**2)
 
+    def distance_to_order(self, order):
+
+        total_distance = 0
+        edges = self.edges_in_order()
+
+        for edge in edges:
+
+            start = edge.start()
+            end = edge.end()
+
+            total_distance += self.get_distance_between_orders(start, end)
+
+            if start == order or end == order:
+                break
+
+        return total_distance
+
     def order_is_reachable(self, order, edges):
         total_time = 0
         

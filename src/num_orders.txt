@@ -1,58 +1,347 @@
-Initial: 20
-Initial: 1631
 LS
-20
-1629
+25
+1711
 Shuffle
-20
-1629
+25
+1646
 []
 Convergence Counter: 0
 LS
-20
-1552
+47
+1711
+LS
+25
+1309
 Shuffle
-20
-1551
+25
+1309
 []
 Convergence Counter: 0
 LS
-20
-1503
+25
+1295
 Shuffle
-20
-1503
+25
+1295
 []
 Convergence Counter: 0
 LS
-20
-1503
+25
+1314
 Shuffle
-20
-1455
+25
+1314
 []
 Convergence Counter: 0
 LS
-20
-1455
+25
+1326
 Shuffle
-20
-1455
+25
+1326
 []
 Convergence Counter: 0
 LS
-20
-1455
+25
+1328
 Shuffle
-20
-1455
+25
+1309
+[]
+Convergence Counter: 0
+LS
+25
+1328
+Shuffle
+25
+1328
+[]
+Convergence Counter: 0
+LS
+25
+1314
+Shuffle
+25
+1314
+[]
+Convergence Counter: 0
+LS
+25
+1314
+Shuffle
+25
+1314
+[]
+Convergence Counter: 0
+LS
+25
+1294
+Shuffle
+25
+1294
+[]
+Convergence Counter: 0
+LS
+25
+1314
+Shuffle
+25
+1295
+[]
+Convergence Counter: 0
+LS
+25
+1348
+Shuffle
+25
+1329
+[]
+Convergence Counter: 0
+LS
+25
+1326
+Shuffle
+25
+1326
+[]
+Convergence Counter: 0
+LS
+25
+1314
+Shuffle
+25
+1314
+[]
+Convergence Counter: 0
+LS
+25
+1314
+Shuffle
+25
+1314
+[]
+Convergence Counter: 0
+LS
+25
+1314
+Shuffle
+25
+1314
+[]
+Convergence Counter: 0
+LS
+25
+1358
+Shuffle
+25
+1358
+[]
+Convergence Counter: 0
+LS
+25
+1328
+Shuffle
+25
+1328
+[]
+Convergence Counter: 0
+LS
+25
+1328
+Shuffle
+25
+1328
+[]
+Convergence Counter: 0
+LS
+25
+1295
+Shuffle
+25
+1295
+[]
+Convergence Counter: 0
+LS
+25
+1314
+Shuffle
+25
+1314
+[]
+Convergence Counter: 0
+LS
+25
+1328
+Shuffle
+25
+1314
+[]
+Convergence Counter: 0
+LS
+25
+1314
+Shuffle
+25
+1314
+[]
+Convergence Counter: 0
+LS
+25
+1368
+Shuffle
+25
+1350
+[]
+Convergence Counter: 0
+LS
+25
+1328
+Shuffle
+25
+1328
+[]
+Convergence Counter: 0
+LS
+25
+1368
+Shuffle
+25
+1351
+[]
+Convergence Counter: 0
+LS
+25
+1328
+Shuffle
+25
+1328
+[]
+Convergence Counter: 0
+LS
+25
+1368
+Shuffle
+25
+1351
+[]
+Convergence Counter: 0
+LS
+25
+1309
+Shuffle
+25
+1309
+[]
+Convergence Counter: 0
+LS
+25
+1295
+Shuffle
+25
+1295
+[]
+Convergence Counter: 0
+LS
+25
+1382
+Shuffle
+25
+1372
+[]
+Convergence Counter: 0
+LS
+25
+1591
+Shuffle
+25
+1591
+[]
+Convergence Counter: 0
+LS
+25
+1628
+Shuffle
+25
+1628
+[]
+Convergence Counter: 0
+LS
+25
+1581
+Shuffle
+25
+1566
 []
 Convergence Counter: 1
 LS
-20
-1455
+25
+1591
 Shuffle
-20
-1455
+25
+1591
+[]
+Convergence Counter: 0
+LS
+25
+1566
+Shuffle
+25
+1566
+[]
+Convergence Counter: 1
+LS
+25
+1566
+Shuffle
+25
+1566
 []
 Convergence Counter: 2
+LS
+25
+1568
+Shuffle
+25
+1568
+[]
+Convergence Counter: 3
+LS
+25
+1556
+Shuffle
+25
+1556
+[]
+Convergence Counter: 0
+LS
+25
+1556
+Shuffle
+25
+1556
+[]
+Convergence Counter: 0
+LS
+25
+1556
+Shuffle
+25
+1556
+[]
+Convergence Counter: 1
+LS
+25
+1556
+Shuffle
+25
+1556
+[]
+Convergence Counter: 2
+LS
+25
+1556
+Shuffle
+25
+1556
+[]
+Convergence Counter: 3
